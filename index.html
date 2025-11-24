@@ -55,30 +55,63 @@
 </div>
 
 <script>
-let answers = { use:null, tv:null, vpn:null };
+let answers = { use:null, tv:null, vpn:null, location:null };
 
 function next(n){
  document.getElementById('screen'+n).classList.remove('active');
  document.getElementById('screen'+(n+1)).classList.add('active');
+ if(n===1) answers.location = document.getElementById('q_location').value.trim();
  if(n===4) buildResult();
 }
 function selectUse(type){ answers.use = type; }
 
+function classifyInternet(){
+ // eenvoudige decision-tree
+ if(answers.use === 'heavy') return 'Starlink (LEO satelliet)';
+ if(answers.use === 'stream') return '4G/5G Box of Starlink';
+ return 'Nordnet (GEO satelliet) of 4G Box';
+}
+function classifyTV(){
+ if(answers.tv==='ja') return 'NLZIET / Canal Digitaal / VRT MAX';
+ return 'TV-opties niet nodig';
+}
+function classifyVPN(){
+ if(answers.vpn==='ja') return 'Surfshark of NordVPN – aanbevolen voor bankieren en DigiD';
+ return 'Geen VPN nodig';
+}
+function proofBlocks(){
+ return `
+ <h3>Onderbouwing uit onafhankelijke testen</h3>
+ <ul>
+   <li>Glasvezel: meest stabiel volgens Consumentenbond en Que Choisir.</li>
+   <li>Starlink: laagste vertraging volgens Duitse en UK tests.</li>
+   <li>GEO-sat (Nordnet): geschikt voor basisgebruik (Que Choisir).</li>
+   <li>4G/5G Box: sterk afhankelijk van lokale dekking (Consumentenbond).</li>
+   <li>VPN: NordVPN/Surfshark wereldwijd best beoordeeld.</li>
+ </ul>`;
+}
+
 function buildResult(){
- let html = "";
- // basale mock-logica (later vervangen door decision engine)
- let internet = "";
- if(answers.use === 'heavy') internet = "⭐ Beste keus: Starlink (LEO satelliet)";
- else if(answers.use === 'stream') internet = "⭐ Beste keus: 4G/5G box of Starlink";
- else internet = "⭐ Beste keus: Nordnet (Neosat GEO) of 4G-box";
- html += `<h3>Internetadvies</h3><p>${internet}</p>`;
- if(answers.tv==='ja') html += `<h3>TV</h3><p>Gebruik NLZIET / Canal Digitaal app. Bij GEO-sat: liever schotel.</p>`;
- if(answers.vpn==='ja') html += `<h3>VPN</h3><p>Aanbevolen: Surfshark of NordVPN.</p>`;
- html += `<h3>Stappenplan</h3><pre>- Klik op de link naar de aanbieder
-- Volg de installatie
-- Test uw verbinding
-- Klaar!</pre>`;
- document.getElementById("result").innerHTML = html;
+ let internet = classifyInternet();
+ let tv = classifyTV();
+ let vpn = classifyVPN();
+ let proof = proofBlocks();
+ document.getElementById('result').innerHTML = `
+   <h3>Internetadvies</h3>
+   <p>${internet}</p>
+   <h3>TV Advies</h3>
+   <p>${tv}</p>
+   <h3>Veiligheid</h3>
+   <p>${vpn}</p>
+   ${proof}
+   <h3>Stappenplan</h3>
+   <pre>
+1. Kies aanbieder volgens advies
+2. Bestel pakket via officiële website
+3. Installeer modem of schotel
+4. Test bankieren en video
+5. Klaar
+   </pre>`;
 }
 </script>
 
