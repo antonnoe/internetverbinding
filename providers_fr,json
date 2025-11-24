@@ -1,0 +1,31 @@
+{
+  "internet": {
+    "fibre": [
+      { "name": "Orange Fibre", "speed": "300-2000 Mbps", "type": "fibre", "quality": 5 },
+      { "name": "SFR Fibre", "speed": "300-1000 Mbps", "type": "fibre", "quality": 4 },
+      { "name": "Bouygues Fibre", "speed": "300-1000 Mbps", "type": "fibre", "quality": 4 },
+      { "name": "Free Fibre", "speed": "300-5000 Mbps", "type": "fibre", "quality": 5 }
+    ],
+    "4g5g": [
+      { "name": "Orange 4G Home", "speed": "20-150 Mbps", "type": "4g", "quality": 3 },
+      { "name": "Bouygues 4G Box", "speed": "20-120 Mbps", "type": "4g", "quality": 3 },
+      { "name": "Free 4G/5G Box", "speed": "30-200 Mbps", "type": "5g", "quality": 4 }
+    ],
+    "leo": [
+      { "name": "Starlink", "speed": "50-200 Mbps", "latency": "30-60 ms", "type": "leo", "quality": 5 }
+    ],
+    "geo": [
+      { "name": "Nordnet Neosat", "speed": "20-100 Mbps", "latency": "600-700 ms", "type": "geo", "quality": 2 },
+      { "name": "Konnect (Eutelsat)", "speed": "20-75 Mbps", "latency": "600-700 ms", "type": "geo", "quality": 2 }
+    ]
+  },
+  "tv": {
+    "nl": ["NLZIET", "Canal Digitaal", "NPO Start", "RTL+", "Videoland"],
+    "fr": ["Canal+", "Fransat", "TNT Sat", "Molotov"]
+  },
+  "vpn": [
+    { "name": "Surfshark", "type": "premium", "ease": 5 },
+    { "name": "NordVPN", "type": "premium", "ease": 4 },
+    { "name": "ProtonVPN", "type": "free", "ease": 4 }
+  ]
+}
