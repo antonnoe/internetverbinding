@@ -1,31 +1,147 @@
 {
   "internet": {
     "fibre": [
-      { "name": "Orange Fibre", "speed": "300-2000 Mbps", "type": "fibre", "quality": 5 },
-      { "name": "SFR Fibre", "speed": "300-1000 Mbps", "type": "fibre", "quality": 4 },
-      { "name": "Bouygues Fibre", "speed": "300-1000 Mbps", "type": "fibre", "quality": 4 },
-      { "name": "Free Fibre", "speed": "300-5000 Mbps", "type": "fibre", "quality": 5 }
+      {
+        "name": "Orange Fibre",
+        "speed": "300-2000 Mbps",
+        "type": "fibre",
+        "quality": 5,
+        "url": "https://boutique.orange.fr/internet/offres-fibre"
+      },
+      {
+        "name": "SFR Fibre",
+        "speed": "300-1000 Mbps",
+        "type": "fibre",
+        "quality": 4,
+        "url": "https://www.sfr.fr/offre-internet.html"
+      },
+      {
+        "name": "Bouygues Fibre",
+        "speed": "300-1000 Mbps",
+        "type": "fibre",
+        "quality": 4,
+        "url": "https://www.bouyguestelecom.fr/offres-internet/fibre"
+      },
+      {
+        "name": "Free Fibre",
+        "speed": "300-5000 Mbps",
+        "type": "fibre",
+        "quality": 5,
+        "url": "https://www.free.fr/freebox/"
+      }
     ],
     "4g5g": [
-      { "name": "Orange 4G Home", "speed": "20-150 Mbps", "type": "4g", "quality": 3 },
-      { "name": "Bouygues 4G Box", "speed": "20-120 Mbps", "type": "4g", "quality": 3 },
-      { "name": "Free 4G/5G Box", "speed": "30-200 Mbps", "type": "5g", "quality": 4 }
+      {
+        "name": "Orange 4G Home",
+        "speed": "20-150 Mbps",
+        "type": "4g",
+        "quality": 3,
+        "url": "https://boutique.orange.fr/internet/offres-4g-home"
+      },
+      {
+        "name": "Bouygues 4G Box",
+        "speed": "20-120 Mbps",
+        "type": "4g",
+        "quality": 3,
+        "url": "https://www.bouyguestelecom.fr/offres-internet/4g-box"
+      },
+      {
+        "name": "Free 4G/5G Box",
+        "speed": "30-200 Mbps",
+        "type": "5g",
+        "quality": 4,
+        "url": "https://www.free.fr/freebox/"
+      }
     ],
     "leo": [
-      { "name": "Starlink", "speed": "50-200 Mbps", "latency": "30-60 ms", "type": "leo", "quality": 5 }
+      {
+        "name": "Starlink",
+        "speed": "50-200 Mbps",
+        "latency": "30-60 ms",
+        "type": "leo",
+        "quality": 5,
+        "url": "https://www.starlink.com/"
+      }
     ],
     "geo": [
-      { "name": "Nordnet Neosat", "speed": "20-100 Mbps", "latency": "600-700 ms", "type": "geo", "quality": 2 },
-      { "name": "Konnect (Eutelsat)", "speed": "20-75 Mbps", "latency": "600-700 ms", "type": "geo", "quality": 2 }
+      {
+        "name": "Nordnet Neosat",
+        "speed": "20-100 Mbps",
+        "latency": "600-700 ms",
+        "type": "geo",
+        "quality": 2,
+        "url": "https://www.nordnet.com/connexion-internet/internet-satellite"
+      },
+      {
+        "name": "Konnect (Eutelsat)",
+        "speed": "20-75 Mbps",
+        "latency": "600-700 ms",
+        "type": "geo",
+        "quality": 2,
+        "url": "https://konnect.com/"
+      }
     ]
   },
   "tv": {
-    "nl": ["NLZIET", "Canal Digitaal", "NPO Start", "RTL+", "Videoland"],
-    "fr": ["Canal+", "Fransat", "TNT Sat", "Molotov"]
+    "nl": [
+      {
+        "name": "NLZIET",
+        "url": "https://www.nlziet.nl/nl/"
+      },
+      {
+        "name": "Canal Digitaal",
+        "url": "https://www.canaldigitaal.nl/"
+      },
+      {
+        "name": "NPO Start",
+        "url": "https://www.npostart.nl/"
+      },
+      {
+        "name": "RTL+",
+        "url": "https://www.rtl.nl/plus"
+      },
+      {
+        "name": "Videoland",
+        "url": "https://www.videoland.com/"
+      }
+    ],
+    "fr": [
+      {
+        "name": "Canal+",
+        "url": "https://www.canalplus.com/"
+      },
+      {
+        "name": "Fransat",
+        "url": "https://www.fransat.fr/"
+      },
+      {
+        "name": "TNT Sat",
+        "url": "https://www.tntsat.tv/"
+      },
+      {
+        "name": "Molotov",
+        "url": "https://www.molotov.tv/"
+      }
+    ]
   },
   "vpn": [
-    { "name": "Surfshark", "type": "premium", "ease": 5 },
-    { "name": "NordVPN", "type": "premium", "ease": 4 },
-    { "name": "ProtonVPN", "type": "free", "ease": 4 }
+    {
+      "name": "Surfshark",
+      "type": "premium",
+      "ease": 5,
+      "url": "https://surfshark.com/"
+    },
+    {
+      "name": "NordVPN",
+      "type": "premium",
+      "ease": 4,
+      "url": "https://nordvpn.com/"
+    },
+    {
+      "name": "ProtonVPN",
+      "type": "free",
+      "ease": 4,
+      "url": "https://protonvpn.com/"
+    }
   ]
 }
