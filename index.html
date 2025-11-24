@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Internetverbinding – Dataverbinding Frankrijk</title>
+  <meta name="description" content="Check uw internetmogelijkheden in Frankrijk. Informatie over Fibre, 4G, Starlink en Nederlandse TV.">
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -26,11 +27,21 @@
       padding: 16px 20px;
       margin-bottom: 24px;
     }
+    
+    .info-blue-box {
+      background: #e3f2fd; 
+      border-left: 4px solid #2196f3; 
+      padding: 10px; 
+      font-size: 14px; 
+      color: #0d47a1;
+      margin-top: 10px;
+    }
 
     /* Zoekveld en Dropdown styling */
     .search-container {
       position: relative;
       max-width: 100%;
+      margin-bottom: 30px;
     }
     label { font-weight: bold; display: block; margin-bottom: 6px; }
     
@@ -71,7 +82,7 @@
       max-height: 250px;
       overflow-y: auto;
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      display: none; /* standaard verborgen */
+      display: none;
     }
     .suggestion-item {
       padding: 10px 12px;
@@ -121,19 +132,40 @@
     .links-list a { color: #800000; text-decoration: none; }
     .links-list a:hover { text-decoration: underline; }
 
-    /* Overige secties */
+    /* Tips en Forum Box */
     .tips-box {
       background: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 8px;
       padding: 14px 16px; margin-bottom: 24px;
     }
+    .forum-box {
+      background: #fff3cd; border: 1px solid #ffeeba; border-radius: 8px;
+      padding: 14px 16px; margin-bottom: 24px; color: #856404;
+    }
+    .forum-box a { color: #856404; font-weight: bold; text-decoration: underline; }
+
     .section { margin-top: 24px; }
     .section ul { padding-left: 18px; }
     .section a { color: #800000; text-decoration: none; }
     .section a:hover { text-decoration: underline; }
 
+    /* Officiële check button style */
+    .arcep-btn {
+      display: block; 
+      background: #000091; 
+      color: #fff; 
+      text-decoration: none; 
+      padding: 15px; 
+      border-radius: 6px; 
+      text-align: center; 
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+    .arcep-btn:hover { background: #1a1a9d; }
+
     footer {
-      margin-top: 40px; font-size: 14px; color: #777;
-      border-top: 1px solid #ddd; padding-top: 10px;
+      margin-top: 40px; font-size: 13px; color: #777;
+      border-top: 1px solid #ddd; padding-top: 15px;
+      line-height: 1.6;
     }
 
     @media (max-width: 600px) {
@@ -149,11 +181,12 @@
 
     <div class="intro-box">
       <p>
-        Zoek uw Franse adres in de officiële database (BAN). Selecteer het juiste adres uit de lijst om de algemene mogelijkheden te zien.
+        Zoek uw Franse adres in de officiële database (BAN). Wij tonen u direct welke technologieën (Fibre, 4G, Satelliet) in uw regio gebruikelijk zijn.
       </p>
-      <p style="font-size:13px;color:#d32f2f; font-weight:bold;">
-        ⚠️ Let op: Deze tool toont algemene info op basis van uw locatie. Wij hebben geen live toegang tot de kabels in uw straat. Gebruik de links bij de resultaten voor de definitieve check.
-      </p>
+      <div class="info-blue-box">
+        <strong>ℹ️ Hoe werkt het?</strong><br>
+        Deze tool vindt uw exacte adresgegevens en toont de mogelijkheden. Klik daarna op de knoppen bij de providers om direct op hun site de definitieve beschikbaarheid te zien.
+      </div>
     </div>
 
     <div class="search-container">
@@ -166,7 +199,7 @@
         <div id="addressSuggestions"></div>
       </form>
       <div class="helper-text">
-        Typ een straat en plaats en klik op 'Zoek Adres'. Kies daarna uw adres uit de lijst.
+        Typ een straat en plaats en druk op Enter (of klik op 'Zoek Adres').
       </div>
     </div>
 
@@ -175,35 +208,50 @@
       
       <div class="address-summary">
         <strong>Geselecteerd adres:</strong> <span id="normalizedAddress"></span><br>
-        <span style="font-size:13px; color:#666;">GPS Coördinaten: <span id="gpsCoords"></span> (Gebruikt voor satelliet-check)</span>
+        <span style="font-size:13px; color:#666;">GPS Coördinaten: <span id="gpsCoords"></span></span>
       </div>
 
       <div class="tech-grid" id="techCards">
         </div>
 
       <div class="tips-box">
-        <h3>Wat is belangrijk?</h3>
+        <h3>Wat is belangrijk &amp; Prijsindicatie</h3>
         <ul>
-          <li><strong>Glasvezel (Fibre):</strong> Altijd de beste keuze als het beschikbaar is.</li>
-          <li><strong>4G/5G Box:</strong> Goed alternatief, maar test eerst de ontvangst met uw mobiel.</li>
-          <li><strong>Starlink:</strong> Beste optie voor het platteland (buitengebied) zonder fibre.</li>
-          <li><strong>ADSL/Satelliet (oud):</strong> Alleen doen als er écht niets anders is.</li>
+          <li>
+            <strong>Glasvezel (Fibre):</strong> De beste keuze. Snel en stabiel.<br>
+            <em>Prijsindicatie: €25 – €50 per maand.</em>
+          </li>
+          <li>
+            <strong>4G/5G Box:</strong> Goed alternatief als er geen Fibre is.<br>
+            <em>Prijsindicatie: €30 – €45 per maand.</em>
+          </li>
+          <li>
+            <strong>Starlink (LEO):</strong> Beste optie voor buitengebied zonder vaste lijn.<br>
+            <em>Prijsindicatie: €40 – €50 per maand + eenmalig hardware (~€250-450).</em>
+          </li>
+          <li>
+            <strong>Klassieke Satelliet:</strong> Alleen doen als er écht niets anders is.<br>
+            <em>Prijsindicatie: €30 – €70 per maand (vaak met datalimiet).</em>
+          </li>
         </ul>
       </div>
 
+      <div class="forum-box">
+        <strong>Praat mee op het forum:</strong><br>
+        Lees de ervaringen van anderen of stel uw vraag. Bekijk de laatste 20 berichten over dit onderwerp op Nederlanders.fr:<br>
+        👉 <a href="https://www.nederlanders.fr/profiles/blog/list?tag=Telecommunicatie" target="_blank">Nieuwste berichten over Telecommunicatie</a>
+      </div>
+
       <div class="section">
-        <h3>Links voor definitieve bevestiging</h3>
-        <p>Omdat wij geen live inzage hebben in de netwerken, moet u hier checken of het écht beschikbaar is:</p>
-        <ul>
-          <li>
-            <strong>Overheid & Dekkingskaart:</strong> 
-            <a href="https://maconnexioninternet.arcep.fr/" target="_blank">Ma Connexion Internet (Arcep)</a> (Vul hier ook uw adres in!)
-          </li>
-          <li>
-            <strong>Mobiel Bereik:</strong>
-            <a href="https://www.monreseaumobile.arcep.fr/" target="_blank">Mon Réseau Mobile</a>
-          </li>
-        </ul>
+        <h3>Doe de officiële dekking-check</h3>
+        <p>Gebruik uw gevonden adresgegevens op de officiële kaart van de toezichthouder voor 100% zekerheid:</p>
+        
+        <a href="https://maconnexioninternet.arcep.fr/" target="_blank" class="arcep-btn">
+          Onafhankelijke check via Arcep (Ma Connexion Internet) &rarr;
+        </a>
+        <p style="font-size:13px; margin-top:8px; color:#666;">
+          Hier ziet u exact of er glasvezel, koper of alleen 4G beschikbaar is op uw huisnummer.
+        </p>
       </div>
 
       <div class="section">
@@ -214,7 +262,10 @@
     </div>
 
     <footer>
-      Infofrankrijk.com en Nederlanders.fr. Data via api-adresse.data.gouv.fr.
+      <p>
+        Infofrankrijk.com en Nederlanders.fr. Data via api-adresse.data.gouv.fr.<br>
+        <strong>Disclaimer:</strong> Wij hebben geen affiliate marketing relatie met de genoemde bedrijven. Deze tool is puur informatief bedoeld.
+      </p>
     </footer>
   </div>
 
@@ -244,7 +295,6 @@
       suggestionsBox.style.display = "block";
 
       try {
-        // We vragen nu 5 resultaten op (limit=5) ipv 1
         const url = "https://api-adresse.data.gouv.fr/search/?q=" + encodeURIComponent(query) + "&limit=5";
         const res = await fetch(url);
         if (res.ok) {
@@ -259,7 +309,7 @@
       }
     }
 
-    // 3. Suggesties tonen in dropdown
+    // 3. Suggesties tonen
     function renderSuggestions(features) {
       const suggestionsBox = document.getElementById("addressSuggestions");
       suggestionsBox.innerHTML = "";
@@ -273,51 +323,35 @@
       features.forEach(f => {
         const div = document.createElement("div");
         div.className = "suggestion-item";
-        
-        // Label opbouwen
         const label = f.properties.label;
-        const context = f.properties.context || ""; // bijv "75, Paris, Île-de-France"
+        const context = f.properties.context || ""; 
         
-        div.innerHTML = `
-          <strong>${label}</strong>
-          <span class="suggestion-context">${context}</span>
-        `;
-
-        // Click event: adres kiezen
+        div.innerHTML = `<strong>${label}</strong><span class="suggestion-context">${context}</span>`;
         div.onclick = () => selectAddress(f);
-        
         suggestionsBox.appendChild(div);
       });
 
       suggestionsBox.style.display = "block";
     }
 
-    // 4. Adres geselecteerd -> Toon resultaten
+    // 4. Adres geselecteerd
     function selectAddress(feature) {
-      // Verberg dropdown
       document.getElementById("addressSuggestions").style.display = "none";
-      
-      // Vul input met gekozen adres
       document.getElementById("addressInput").value = feature.properties.label;
-
-      // Toon resultaatsectie
       document.getElementById("results").style.display = "block";
       document.getElementById("normalizedAddress").textContent = feature.properties.label;
       
-      // Toon coordinaten (handig om te weten dat het echt werkt)
-      const coords = feature.geometry.coordinates; // [lon, lat]
+      const coords = feature.geometry.coordinates; 
       document.getElementById("gpsCoords").textContent = coords[1] + ", " + coords[0];
 
-      // Render de content
       renderResults();
     }
 
-    // 5. Render Kaarten & Lijsten
+    // 5. Render Kaarten
     function renderResults() {
       const container = document.getElementById("techCards");
       const internet = providersData && providersData.internet ? providersData.internet : {};
       
-      // Helper om providers te tonen
       const listLinks = (arr) => {
         if(!arr) return "";
         return arr.map(p => `<a href="${p.url}" target="_blank">${p.name}</a>`).join("<br>");
@@ -343,7 +377,6 @@
         </div>
       `;
 
-      // TV en VPN renderen
       const tvList = document.getElementById("tvList");
       const vpnList = document.getElementById("vpnList");
       
@@ -360,10 +393,8 @@
       }
     }
 
-    // Start
     document.addEventListener("DOMContentLoaded", loadProviders);
     
-    // Klik buiten dropdown sluit hem
     document.addEventListener('click', function(e) {
       const container = document.querySelector('.search-container');
       if (!container.contains(e.target)) {
