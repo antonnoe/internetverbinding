@@ -494,15 +494,29 @@
       const nl = providersData.tv.nl || [];
       const fr = providersData.tv.fr || [];
 
+      function formatTv(arr) {
+        return arr.map(item => {
+          if (typeof item === "string") {
+            return escapeHtml(item);
+          }
+          const name = escapeHtml(item.name || "");
+          if (item.url) {
+            return '<a href="' + escapeHtml(item.url) +
+                   '" target="_blank" rel="noopener">' + name + '</a>';
+          }
+          return name;
+        }).join(", ");
+      }
+
       let html = "";
       if (nl.length > 0) {
         html += "<li><strong>Nederlandse TV (via internet):</strong> " +
-                nl.map(escapeHtml).join(", ") +
+                formatTv(nl) +
                 ".</li>";
       }
       if (fr.length > 0) {
         html += "<li><strong>Franse TV / streaming:</strong> " +
-                fr.map(escapeHtml).join(", ") +
+                formatTv(fr) +
                 ".</li>";
       }
       html += "<li style='font-size:13px;color:#555;'>Controleer altijd of uw verbinding snel en stabiel genoeg is voor meerdere streams tegelijk.</li>";
@@ -520,9 +534,14 @@
 
       let html = "";
       vpns.forEach(v => {
-        const name = v.name || "VPN-dienst";
-        const type = v.type ? " (" + v.type + ")" : "";
-        html += "<li><strong>" + escapeHtml(name) + "</strong>" + escapeHtml(type) +
+        const name = escapeHtml(v.name || "VPN-dienst");
+        const type = v.type ? " (" + escapeHtml(v.type) + ")" : "";
+        let linkPart = name;
+        if (v.url) {
+          linkPart = '<a href="' + escapeHtml(v.url) +
+                     '" target="_blank" rel="noopener">' + name + '</a>';
+        }
+        html += "<li><strong>" + linkPart + "</strong>" + type +
                 " – eenvoudige extra beveiligingslaag, vooral nuttig op openbare WiFi en bij gebruik van NL-diensten.</li>";
       });
       html += "<li style='font-size:13px;color:#555;'>Voor bankieren en DigiD is een stabiele verbinding meestal voldoende; een VPN is vooral extra bescherming en kan helpen bij toegang tot bepaalde NL-diensten.</li>";
@@ -534,9 +553,15 @@
       if (!arr || arr.length === 0) {
         return '<span style="font-size:13px;color:#555;">Controleer aanbieders bij u in de regio.</span>';
       }
-      // We hebben in providers_fr.json geen URL's, dus tonen we alleen de namen.
       return arr
-        .map(p => escapeHtml(p.name || String(p)))
+        .map(p => {
+          const name = escapeHtml(p.name || String(p));
+          if (p.url) {
+            return '<a href="' + escapeHtml(p.url) +
+                   '" target="_blank" rel="noopener">' + name + '</a>';
+          }
+          return name;
+        })
         .join("<br>");
     }
 
