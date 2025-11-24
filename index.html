@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Internetverbinding – Dataverbinding Frankrijk</title>
-  <meta name="description" content="Check uw internetmogelijkheden in Frankrijk. Informatie over Fibre, 4G, Starlink en Nederlandse TV.">
+  <title>Internetverbinding Wegwijzer – Frankrijk</title>
+  <meta name="description" content="Check uw internetmogelijkheden in Frankrijk. Wegwijzer voor Fibre, 4G, Starlink en Hardware advies.">
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -137,7 +137,6 @@
       background: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 8px;
       padding: 14px 16px; margin-bottom: 24px;
     }
-    /* Nieuwe stijl voor Bespaartips */
     .savings-box {
       background: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 8px;
       padding: 14px 16px; margin-bottom: 24px;
@@ -155,19 +154,30 @@
     .section a { color: #800000; text-decoration: none; }
     .section a:hover { text-decoration: underline; }
 
-    /* Officiële check button style */
-    .arcep-btn {
-      display: block; 
-      background: #000091; 
-      color: #fff; 
+    /* ACTIE KNOPPEN (Arcep + Hardware) */
+    .action-buttons-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-top: 15px;
+    }
+    
+    .btn-maroon {
+      flex: 1;
+      min-width: 250px; /* Zorgt dat ze stapelen op hele kleine schermen */
+      background: #800000; 
+      color: #ffffff; 
       text-decoration: none; 
-      padding: 15px; 
+      padding: 16px; 
       border-radius: 6px; 
       text-align: center; 
       font-weight: bold;
-      transition: background 0.2s;
+      transition: opacity 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    .arcep-btn:hover { background: #1a1a9d; }
+    .btn-maroon:hover { opacity: 0.9; }
 
     footer {
       margin-top: 40px; font-size: 13px; color: #777;
@@ -178,12 +188,13 @@
     @media (max-width: 600px) {
       .input-group { flex-direction: column; }
       button.search-btn { width: 100%; }
+      .action-buttons-container { flex-direction: column; }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Internetverbinding</h1>
+    <h1>Internetverbinding wegwijzer</h1>
     <div class="subtitle">Dataverbinding Frankrijk</div>
 
     <div class="intro-box">
@@ -192,7 +203,7 @@
       </p>
       <div class="info-blue-box">
         <strong>ℹ️ Hoe werkt het?</strong><br>
-        Deze tool vindt uw exacte adresgegevens en toont de mogelijkheden. Klik daarna op de knoppen bij de providers om direct op hun site de definitieve beschikbaarheid te zien.
+        Deze tool vindt uw exacte adresgegevens en toont de mogelijkheden. Klik daarna op de knoppen om definitief te checken of advies over hardware te lezen.
       </div>
     </div>
 
@@ -222,19 +233,19 @@
         </div>
 
       <div class="savings-box">
-        <h3>💡 Slimme bespaartips uit de praktijk</h3>
+        <h3>💡 Slimme tips &amp; Subsidie (Factcheck)</h3>
         <ul>
           <li>
-            <strong>Bespaar op TV:</strong> Veel Nederlanders in Frankrijk zeggen hun dure satelliet-TV abonnement op (Canal Digitaal) en kijken via apps (zoals NLZIET) op hun smart-TV. Dit vereist wel een stabiele internetverbinding.
+            <strong>Besparen op TV:</strong> Kunt u stabiel internet krijgen (via glasvezel of Starlink)? Overweeg dan uw dure schotel-TV abonnement op te zeggen en kijk Nederlandse TV via apps (o.a. NLZIET). Dit is vaak goedkoper.
           </li>
           <li>
-            <strong>Slecht mobiel bereik?</strong> Activeer "Bellen via WiFi" (VoWiFi) op uw smartphone. Zo bent u binnenshuis perfect bereikbaar, ook als de zendmast ver weg is (ideaal i.c.m. Starlink of Fibre).
+            <strong>Slecht mobiel bereik binnenshuis?</strong> Bijna alle Franse providers ondersteunen "Bellen via WiFi" (VoWiFi). Activeer dit op uw telefoon om via uw internetverbinding kraakhelder te bellen, zelfs zonder 4G-mast in de buurt.
           </li>
           <li>
-            <strong>Lange oprit?</strong> Ligt er glasvezel aan de weg, maar is de aansluiting naar uw huis onbetaalbaar (bijv. >500m)? Dan is Starlink of 4G vaak het enige betaalbare alternatief.
+            <strong>Subsidie checken:</strong> Woont u in een gebied waar géén snel vast internet (>30 Mbps) mogelijk is? De Franse staat vergoedt vaak tot €150 (of meer) op de <em>aanschafkosten</em> van hardware voor satelliet of 4G via de regeling <em>"Cohésion Numérique des Territoires"</em>.
           </li>
           <li>
-            <strong>Subsidie checken:</strong> In sommige "witte zones" (geen vast internet mogelijk) vergoedt de Franse staat tot €150 (of soms meer) op de aanschaf van hardware voor Satelliet of 4G via de regeling <em>"Cohésion Numérique des Territoires"</em>. Vraag dit na bij de provider.
+            <strong>Let op bij lange opritten:</strong> Glasvezel aanleggen over privéterrein (graafwerk of palen) is vaak voor eigen rekening. Dit kan bij lange afstanden kostbaar zijn.
           </li>
         </ul>
       </div>
@@ -263,19 +274,26 @@
 
       <div class="forum-box">
         <strong>Praat mee op het forum:</strong><br>
-        Lees de ervaringen van anderen (bijv. over Neosat vs Starlink). Bekijk de laatste 20 berichten over dit onderwerp op Nederlanders.fr:<br>
+        Twijfelt u? Lees de ervaringen van anderen. Bekijk de laatste berichten over dit onderwerp op Nederlanders.fr:<br>
         👉 <a href="https://www.nederlanders.fr/profiles/blog/list?tag=Telecommunicatie" target="_blank">Nieuwste berichten over Telecommunicatie</a>
       </div>
 
       <div class="section">
-        <h3>Doe de officiële dekking-check</h3>
-        <p>Gebruik uw gevonden adresgegevens op de officiële kaart van de toezichthouder voor 100% zekerheid:</p>
+        <h3>Volgende stappen: Check &amp; Advies</h3>
+        <p>Gebruik uw gevonden adresgegevens voor de officiële check of lees ons advies over routers en wifi:</p>
         
-        <a href="https://maconnexioninternet.arcep.fr/" target="_blank" class="arcep-btn">
-          Onafhankelijke check via Arcep (Ma Connexion Internet) &rarr;
-        </a>
+        <div class="action-buttons-container">
+          <a href="https://maconnexioninternet.arcep.fr/" target="_blank" class="btn-maroon">
+            Officiële Check (Arcep) &rarr;
+          </a>
+          
+          <a href="https://infofrankrijk.tempurl.host/2025/11/24/hardware-adviezen-voor-een-optimale-internetverbinding/" target="_blank" class="btn-maroon">
+            Hardware &amp; Tips Advies &rarr;
+          </a>
+        </div>
+        
         <p style="font-size:13px; margin-top:8px; color:#666;">
-          Hier ziet u exact of er glasvezel, koper of alleen 4G beschikbaar is op uw huisnummer.
+          De Arcep-kaart is de enige 100% onafhankelijke bron voor technische beschikbaarheid per huisnummer.
         </p>
       </div>
 
