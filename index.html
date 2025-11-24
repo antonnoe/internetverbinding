@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NLFR Connectiviteitskompas</title>
+<style>
+ body { font-family: Arial, sans-serif; background:#fff; color:#000; margin:0; padding:20px; }
+ h1, h2 { color:#800000; }
+ .screen { display:none; max-width:600px; margin:auto; }
+ .active { display:block; }
+ button { background:#800000; color:white; padding:12px 18px; border:none; border-radius:6px; margin-top:20px; cursor:pointer; font-size:16px; }
+ .option { border:1px solid #ccc; padding:15px; border-radius:8px; margin:10px 0; cursor:pointer; }
+ .option:hover { background:#f2e6e6; }
+ #result { border-top:2px solid #800000; padding-top:20px; }
+ pre { background:#f9f9f9; padding:10px; border-radius:6px; }
+</style>
+</head>
+<body>
+
+<h1>NLFR Connectiviteitskompas</h1>
+<p>Beantwoord een paar eenvoudige vragen. U krijgt daarna een persoonlijk advies en een stappenplan.</p>
+
+<div id="screen1" class="screen active">
+<h2>1. Waar woont u?</h2>
+<input id="q_location" placeholder="Bijv. 32100 Gers" style="width:100%; padding:10px; font-size:16px;">
+<button onclick="next(1)">Volgende</button>
+</div>
+
+<div id="screen2" class="screen">
+<h2>2. Waar gebruikt u internet voor?</h2>
+<div class="option" onclick="selectUse('basis')">E-mail, Bankieren, Nieuws lezen</div>
+<div class="option" onclick="selectUse('stream')">TV kijken, YouTube, Videobellen</div>
+<div class="option" onclick="selectUse('heavy')">Thuiswerken, Cloud, Veel apparaten</div>
+<button onclick="next(2)">Volgende</button>
+</div>
+
+<div id="screen3" class="screen">
+<h2>3. Wilt u Nederlandse TV kijken?</h2>
+<div class="option" onclick="answers.tv='ja'">Ja</div>
+<div class="option" onclick="answers.tv='nee'">Nee</div>
+<button onclick="next(3)">Volgende</button>
+</div>
+
+<div id="screen4" class="screen">
+<h2>4. Wilt u veilig internetten en bankieren?</h2>
+<div class="option" onclick="answers.vpn='ja'">Ja, graag extra veilig</div>
+<div class="option" onclick="answers.vpn='nee'">Nee, niet nodig</div>
+<button onclick="next(4)">Volgende</button>
+</div>
+
+<div id="screen5" class="screen">
+<h2>Uw persoonlijk advies</h2>
+<div id="result"></div>
+</div>
+
+<script>
+let answers = { use:null, tv:null, vpn:null };
+
+function next(n){
+ document.getElementById('screen'+n).classList.remove('active');
+ document.getElementById('screen'+(n+1)).classList.add('active');
+ if(n===4) buildResult();
+}
+function selectUse(type){ answers.use = type; }
+
+function buildResult(){
+ let html = "";
+ // basale mock-logica (later vervangen door decision engine)
+ let internet = "";
+ if(answers.use === 'heavy') internet = "⭐ Beste keus: Starlink (LEO satelliet)";
+ else if(answers.use === 'stream') internet = "⭐ Beste keus: 4G/5G box of Starlink";
+ else internet = "⭐ Beste keus: Nordnet (Neosat GEO) of 4G-box";
+ html += `<h3>Internetadvies</h3><p>${internet}</p>`;
+ if(answers.tv==='ja') html += `<h3>TV</h3><p>Gebruik NLZIET / Canal Digitaal app. Bij GEO-sat: liever schotel.</p>`;
+ if(answers.vpn==='ja') html += `<h3>VPN</h3><p>Aanbevolen: Surfshark of NordVPN.</p>`;
+ html += `<h3>Stappenplan</h3><pre>- Klik op de link naar de aanbieder
+- Volg de installatie
+- Test uw verbinding
+- Klaar!</pre>`;
+ document.getElementById("result").innerHTML = html;
+}
+</script>
+
+</body>
+</html>
