@@ -1,119 +1,532 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NLFR Connectiviteitskompas</title>
-<style>
- body { font-family: Arial, sans-serif; background:#fff; color:#000; margin:0; padding:20px; }
- h1, h2 { color:#800000; }
- .screen { display:none; max-width:600px; margin:auto; }
- .active { display:block; }
- button { background:#800000; color:white; padding:12px 18px; border:none; border-radius:6px; margin-top:20px; cursor:pointer; font-size:16px; }
- .option { border:1px solid #ccc; padding:15px; border-radius:8px; margin:10px 0; cursor:pointer; }
- .option:hover { background:#f2e6e6; }
- #result { border-top:2px solid #800000; padding-top:20px; }
- pre { background:#f9f9f9; padding:10px; border-radius:6px; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Internetverbinding – Dataverbinding Frankrijk</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #ffffff;
+      color: #000000;
+      margin: 0;
+      padding: 20px;
+      line-height: 1.5;
+    }
+    h1, h2 {
+      color: #800000;
+      margin-top: 0;
+    }
+    h3 {
+      color: #555555;
+    }
+    .subtitle {
+      color: #777777;
+      margin-top: 4px;
+      margin-bottom: 20px;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    .intro-box {
+      background: #f8f8f8;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+    }
+    label {
+      font-weight: bold;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 4px;
+      border: 1px solid #cccccc;
+      box-sizing: border-box;
+      margin-top: 6px;
+    }
+    .helper-text {
+      font-size: 13px;
+      color: #666666;
+      margin-top: 4px;
+    }
+    button {
+      background: #800000;
+      color: #ffffff;
+      padding: 12px 18px;
+      border: none;
+      border-radius: 6px;
+      margin-top: 14px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      opacity: 0.95;
+    }
+    #addressStatus {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #333333;
+    }
+    #results {
+      margin-top: 30px;
+      border-top: 2px solid #800000;
+      padding-top: 20px;
+      display: none;
+    }
+    .address-summary {
+      font-size: 14px;
+      color: #444444;
+      margin-bottom: 12px;
+    }
+    .tech-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .tech-card {
+      flex: 1 1 260px;
+      border: 1px solid #dddddd;
+      border-radius: 10px;
+      padding: 14px 16px;
+      box-sizing: border-box;
+      background: #ffffff;
+    }
+    .tech-card h3 {
+      margin-top: 0;
+      margin-bottom: 8px;
+      color: #800000;
+    }
+    .pill {
+      display: inline-block;
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #f2e6e6;
+      color: #800000;
+      margin-bottom: 8px;
+    }
+    .tech-card ul {
+      padding-left: 18px;
+      margin-top: 6px;
+      margin-bottom: 6px;
+    }
+    .tech-card li {
+      margin-bottom: 2px;
+    }
+    .links-list {
+      font-size: 13px;
+      margin-top: 6px;
+    }
+    .links-list a {
+      color: #800000;
+      text-decoration: none;
+    }
+    .links-list a:hover {
+      text-decoration: underline;
+    }
+    .tips-box {
+      background: #f9f9f9;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 24px;
+    }
+    .tips-box h3 {
+      margin-top: 0;
+      color: #800000;
+    }
+    .tips-box ul {
+      padding-left: 18px;
+      margin-top: 6px;
+      margin-bottom: 6px;
+    }
+    .section {
+      margin-top: 24px;
+    }
+    .section ul {
+      padding-left: 18px;
+      margin-top: 6px;
+      margin-bottom: 6px;
+    }
+    .section a {
+      color: #800000;
+      text-decoration: none;
+    }
+    .section a:hover {
+      text-decoration: underline;
+    }
+    footer {
+      margin-top: 40px;
+      font-size: 14px;
+      color: #777777;
+      border-top: 1px solid #dddddd;
+      padding-top: 10px;
+      text-align: left;
+    }
+    @media (max-width: 600px) {
+      body {
+        padding: 12px;
+      }
+      .tech-card {
+        flex: 1 1 100%;
+      }
+    }
+  </style>
 </head>
 <body>
+  <div class="container">
+    <h1>Internetverbinding</h1>
+    <div class="subtitle">Dataverbinding Frankrijk</div>
 
-<h1>NLFR Connectiviteitskompas</h1>
-<p>Beantwoord een paar eenvoudige vragen. U krijgt daarna een persoonlijk advies en een stappenplan.</p>
+    <div class="intro-box">
+      <p>
+        Vul hieronder uw adres in Frankrijk in. U krijgt daarna een overzicht van de belangrijkste
+        mogelijkheden voor internet (fibre, 4G/5G, satelliet) én tips voor Nederlandse TV en VPN.
+      </p>
+      <p style="font-size:13px;color:#555;">
+        Dit hulpmiddel is informatief. Controleer uw definitieve keuze altijd bij de aanbieder en op de
+        officiële websites van de Franse overheid.
+      </p>
+    </div>
 
-<div id="screen1" class="screen active">
-<h2>1. Waar woont u?</h2>
-<input id="q_location" placeholder="Bijv. 32100 Gers" style="width:100%; padding:10px; font-size:16px;">
-<button onclick="next(1)">Volgende</button>
-</div>
+    <div>
+      <label for="addressInput">Adres in Frankrijk</label>
+      <input id="addressInput" type="text" placeholder="Bijv. 5 route du Village, 32100 Condom">
+      <div class="helper-text">
+        Hoe preciezer (straat + huisnummer + postcode + gemeente), hoe beter. Binnen één postcode kan de
+        situatie per straat of gebouw verschillen.
+      </div>
+      <button type="button" onclick="onCheckAddress()">Toon opties</button>
+      <div id="addressStatus"></div>
+    </div>
 
-<div id="screen2" class="screen">
-<h2>2. Waar gebruikt u internet voor?</h2>
-<div class="option" onclick="selectUse('basis')">E-mail, Bankieren, Nieuws lezen</div>
-<div class="option" onclick="selectUse('stream')">TV kijken, YouTube, Videobellen</div>
-<div class="option" onclick="selectUse('heavy')">Thuiswerken, Cloud, Veel apparaten</div>
-<button onclick="next(2)">Volgende</button>
-</div>
+    <div id="results">
+      <h2>Overzicht verbindingen voor uw situatie</h2>
+      <div id="normalizedWrapper" class="address-summary">
+        Adres: <span id="normalizedAddress"></span>
+      </div>
 
-<div id="screen3" class="screen">
-<h2>3. Wilt u Nederlandse TV kijken?</h2>
-<div class="option" onclick="answers.tv='ja'">Ja</div>
-<div class="option" onclick="answers.tv='nee'">Nee</div>
-<button onclick="next(3)">Volgende</button>
-</div>
+      <div class="tech-grid" id="techCards">
+        <!-- kaarten worden door JavaScript gevuld -->
+      </div>
 
-<div id="screen4" class="screen">
-<h2>4. Wilt u veilig internetten en bankieren?</h2>
-<div class="option" onclick="answers.vpn='ja'">Ja, graag extra veilig</div>
-<div class="option" onclick="answers.vpn='nee'">Nee, niet nodig</div>
-<button onclick="next(4)">Volgende</button>
-</div>
+      <div class="tips-box">
+        <h3>Wat is voor u belangrijk?</h3>
+        <ul>
+          <li><strong>TV en streaming:</strong> kies bij voorkeur een optie met hoge snelheid en lage vertraging, zoals fibre of Starlink.</li>
+          <li><strong>Videobellen en thuiswerken:</strong> let extra op stabiliteit en vertraging (latency); fibre, Starlink en goede 4G/5G zijn dan het meest comfortabel.</li>
+          <li><strong>Zo goedkoop mogelijk:</strong> bekijk ADSL/4G-box-tarieven en promoties; satelliet en LEO zijn vaak duurder per maand.</li>
+          <li><strong>Veilig bankieren en DigiD:</strong> elke verbinding kan werken, maar een VPN geeft extra bescherming, vooral op openbare of gedeelde WiFi.</li>
+        </ul>
+      </div>
 
-<div id="screen5" class="screen">
-<h2>Uw persoonlijk advies</h2>
-<div id="result"></div>
-</div>
+      <div class="section">
+        <h3>TV-diensten (Nederland en Frankrijk)</h3>
+        <ul id="tvList">
+          <!-- wordt gevuld vanuit providers_fr.json -->
+        </ul>
+      </div>
 
-<script>
-let answers = { use:null, tv:null, vpn:null, location:null };
+      <div class="section">
+        <h3>VPN-aanbieders (extra veiligheid en toegang tot NL-diensten)</h3>
+        <ul id="vpnList">
+          <!-- wordt gevuld vanuit providers_fr.json -->
+        </ul>
+      </div>
 
-function next(n){
- document.getElementById('screen'+n).classList.remove('active');
- document.getElementById('screen'+(n+1)).classList.add('active');
- if(n===1) answers.location = document.getElementById('q_location').value.trim();
- if(n===4) buildResult();
-}
-function selectUse(type){ answers.use = type; }
+      <div class="section">
+        <h3>Bronnen en meer lezen</h3>
+        <ul>
+          <li>
+            Arcep – Ma Connexion Internet (officiële informatie over technologieën per adres):
+            <a href="https://maconnexioninternet.arcep.fr/" target="_blank" rel="noopener">maconnexioninternet.arcep.fr</a>
+          </li>
+          <li>
+            Arcep – Uitleg over fibre, ADSL, satelliet en andere technologieën:
+            <a href="https://www.arcep.fr/mes-demarches-et-services/consommateurs/fiches-pratiques/fibre-adsl-satellite-quelle-technologie-pour-mon-acces-a-internet.html"
+               target="_blank" rel="noopener">arcep.fr – fiche pratique</a>
+          </li>
+          <li>
+            Base Adresse Nationale – adresvalidatie en geocodering:
+            <a href="https://api-adresse.data.gouv.fr/" target="_blank" rel="noopener">api-adresse.data.gouv.fr</a>
+          </li>
+          <li>
+            Orange – glasvezel en internet:
+            <a href="https://boutique.orange.fr/internet/offres-fibre" target="_blank" rel="noopener">Orange Fibre</a>
+          </li>
+          <li>
+            Bouygues Telecom – 4G Box:
+            <a href="https://www.bouyguestelecom.fr/offres-internet/4g-box" target="_blank" rel="noopener">Bouygues 4G Box</a>
+          </li>
+          <li>
+            Free – Freebox Fibre:
+            <a href="https://www.free.fr/freebox/" target="_blank" rel="noopener">Freebox (Fibre)</a>
+          </li>
+          <li>
+            Nordnet – neosat (internet via satelliet):
+            <a href="https://www.nordnet.com/connexion-internet/internet-satellite" target="_blank" rel="noopener">Nordnet neosat</a>
+          </li>
+          <li>
+            NLZIET – Nederlandse TV online:
+            <a href="https://www.nlziet.nl/nl/" target="_blank" rel="noopener">nlziet.nl</a>
+          </li>
+          <li>
+            Surfshark – VPN:
+            <a href="https://surfshark.com/" target="_blank" rel="noopener">surfshark.com</a>
+          </li>
+          <li>
+            NordVPN – VPN:
+            <a href="https://nordvpn.com/" target="_blank" rel="noopener">nordvpn.com</a>
+          </li>
+          <li>
+            ProtonVPN – VPN:
+            <a href="https://protonvpn.com/" target="_blank" rel="noopener">protonvpn.com</a>
+          </li>
+        </ul>
+      </div>
+    </div>
 
-function classifyInternet(){
- // eenvoudige decision-tree
- if(answers.use === 'heavy') return 'Starlink (LEO satelliet)';
- if(answers.use === 'stream') return '4G/5G Box of Starlink';
- return 'Nordnet (GEO satelliet) of 4G Box';
-}
-function classifyTV(){
- if(answers.tv==='ja') return 'NLZIET / Canal Digitaal / VRT MAX';
- return 'TV-opties niet nodig';
-}
-function classifyVPN(){
- if(answers.vpn==='ja') return 'Surfshark of NordVPN – aanbevolen voor bankieren en DigiD';
- return 'Geen VPN nodig';
-}
-function proofBlocks(){
- return `
- <h3>Onderbouwing uit onafhankelijke testen</h3>
- <ul>
-   <li>Glasvezel: meest stabiel volgens Consumentenbond en Que Choisir.</li>
-   <li>Starlink: laagste vertraging volgens Duitse en UK tests.</li>
-   <li>GEO-sat (Nordnet): geschikt voor basisgebruik (Que Choisir).</li>
-   <li>4G/5G Box: sterk afhankelijk van lokale dekking (Consumentenbond).</li>
-   <li>VPN: NordVPN/Surfshark wereldwijd best beoordeeld.</li>
- </ul>`;
-}
+    <footer>
+      Infofrankrijk.com en Nederlanders.fr.
+    </footer>
+  </div>
 
-function buildResult(){
- let internet = classifyInternet();
- let tv = classifyTV();
- let vpn = classifyVPN();
- let proof = proofBlocks();
- document.getElementById('result').innerHTML = `
-   <h3>Internetadvies</h3>
-   <p>${internet}</p>
-   <h3>TV Advies</h3>
-   <p>${tv}</p>
-   <h3>Veiligheid</h3>
-   <p>${vpn}</p>
-   ${proof}
-   <h3>Stappenplan</h3>
-   <pre>
-1. Kies aanbieder volgens advies
-2. Bestel pakket via officiële website
-3. Installeer modem of schotel
-4. Test bankieren en video
-5. Klaar
-   </pre>`;
-}
-</script>
+  <script>
+    let providersData = null;
 
+    // Providers laden uit providers_fr.json
+    async function loadProviders() {
+      try {
+        const res = await fetch("providers_fr.json");
+        if (!res.ok) {
+          console.warn("Kon providers_fr.json niet laden (status " + res.status + ")");
+          return;
+        }
+        providersData = await res.json();
+      } catch (e) {
+        console.error("Fout bij laden providers_fr.json:", e);
+      }
+    }
+
+    // Check adres -> BAN (Base Adresse Nationale) + resultaten tonen
+    async function onCheckAddress() {
+      const input = document.getElementById("addressInput");
+      const statusEl = document.getElementById("addressStatus");
+      const resultsEl = document.getElementById("results");
+      const normalizedSpan = document.getElementById("normalizedAddress");
+
+      const rawAddress = (input.value || "").trim();
+      if (!rawAddress) {
+        statusEl.textContent = "Vul eerst een adres in.";
+        resultsEl.style.display = "none";
+        return;
+      }
+
+      statusEl.textContent = "Adres wordt gecontroleerd via de Base Adresse Nationale…";
+      normalizedSpan.textContent = rawAddress;
+
+      try {
+        const url = "https://api-adresse.data.gouv.fr/search/?q=" +
+                    encodeURIComponent(rawAddress) +
+                    "&limit=1";
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.features && data.features.length > 0) {
+            const f = data.features[0];
+            const label = f.properties && f.properties.label ? f.properties.label : rawAddress;
+            normalizedSpan.textContent = label;
+            statusEl.textContent = "Adres gevonden via de Base Adresse Nationale.";
+          } else {
+            statusEl.textContent =
+              "Adres niet gevonden. We tonen algemene opties voor Frankrijk. Controleer zelf ook op Ma Connexion Internet.";
+          }
+        } else {
+          statusEl.textContent =
+            "Adrescontrole niet gelukt (technisch probleem). We tonen algemene opties voor Frankrijk.";
+        }
+      } catch (e) {
+        console.error("Fout bij contact met api-adresse:", e);
+        statusEl.textContent =
+          "Adrescontrole niet gelukt (geen verbinding met adres-API). We tonen algemene opties voor Frankrijk.";
+      }
+
+      renderResults();
+      resultsEl.style.display = "block";
+    }
+
+    // Resultaten renderen op basis van providers_fr.json (of generieke tekst als die ontbreekt)
+    function renderResults() {
+      renderTechCards();
+      renderTvList();
+      renderVpnList();
+    }
+
+    function renderTechCards() {
+      const container = document.getElementById("techCards");
+      let html = "";
+
+      const internet = providersData && providersData.internet ? providersData.internet : {};
+      const fibreProviders = internet.fibre || [];
+      const boxProviders = internet["4g5g"] || [];
+      const leoProviders = internet.leo || [];
+      const geoProviders = internet.geo || [];
+
+      // Fibre
+      html += `
+      <div class="tech-card">
+        <span class="pill">Fibre (glasvezel)</span>
+        <h3>Glasvezel (Fibre)</h3>
+        <p>Zeer snel en stabiel internet via glasvezelkabel. Waar beschikbaar is dit in de praktijk de beste oplossing.</p>
+        <ul>
+          <li>Typische snelheid: 300–1000+ Mbps download</li>
+          <li>Latency: zeer laag – ideaal voor videobellen en thuiswerken</li>
+          <li>Weersinvloed: geen</li>
+        </ul>
+        <p><strong>Geschikt voor:</strong> TV en streaming, videobellen, thuiswerken, meerdere apparaten tegelijk.</p>
+        <div class="links-list">
+          <strong>Mogelijke aanbieders:</strong><br>
+          ${listProvidersAsLinks(fibreProviders)}
+          <br>
+          <span style="font-size:12px;color:#666;">Controleer uw adres definitief op Ma Connexion Internet en bij de aanbieder.</span>
+        </div>
+      </div>
+      `;
+
+      // 4G/5G Box
+      html += `
+      <div class="tech-card">
+        <span class="pill">4G/5G</span>
+        <h3>4G/5G Box (internet via mobiel netwerk)</h3>
+        <p>Internet via het mobiele netwerk. Handig waar fibre nog ontbreekt, vooral als de dekking in uw gebied goed is.</p>
+        <ul>
+          <li>Typische snelheid: 20–200 Mbps (sterk afhankelijk van mast en drukte)</li>
+          <li>Latency: laag tot gemiddeld</li>
+          <li>Weersinvloed: beperkt, vooral afhankelijk van netwerkbelasting</li>
+        </ul>
+        <p><strong>Geschikt voor:</strong> TV/streaming (1–2 schermen), videobellen, thuiswerken bij goede dekking.</p>
+        <p><strong>Let op:</strong> prestaties kunnen sterk wisselen per locatie; controleer dekking op Mon Réseau Mobile en bij de aanbieder.</p>
+        <div class="links-list">
+          <strong>Mogelijke aanbieders:</strong><br>
+          ${listProvidersAsLinks(boxProviders)}
+        </div>
+      </div>
+      `;
+
+      // LEO-satelliet (Starlink)
+      html += `
+      <div class="tech-card">
+        <span class="pill">LEO satelliet</span>
+        <h3>Starlink (LEO-satelliet)</h3>
+        <p>Internet via lagebaan-satellieten met een schotel op uw terrein. Vooral interessant in zeer landelijke gebieden.</p>
+        <ul>
+          <li>Typische snelheid: 50–200 Mbps</li>
+          <li>Latency: circa 30–60 ms – goed voor videobellen</li>
+          <li>Weersinvloed: beperkt, bij zware regen soms vertraging of lagere snelheid</li>
+        </ul>
+        <p><strong>Geschikt voor:</strong> TV/streaming, videobellen, thuiswerken, cloudgebruik.</p>
+        <p><strong>Nadeel:</strong> hogere maandkosten en aanschaf van schotel.</p>
+        <div class="links-list">
+          <strong>Aanbieder:</strong><br>
+          ${listProvidersAsLinks(leoProviders)}
+        </div>
+      </div>
+      `;
+
+      // GEO-satelliet (Nordnet / Konnect)
+      html += `
+      <div class="tech-card">
+        <span class="pill">GEO satelliet</span>
+        <h3>Satelliet (Nordnet / Konnect)</h3>
+        <p>Internet via geostationaire satellieten. Bedoeld voor adressen waar geen andere oplossing beschikbaar is.</p>
+        <ul>
+          <li>Typische snelheid: 20–100 Mbps</li>
+          <li>Latency: hoog (600–700 ms) – vertraging merkbaar bij videogesprekken en online gaming</li>
+          <li>Weersinvloed: sterker merkbaar, vooral bij zware regen of onweer</li>
+        </ul>
+        <p><strong>Geschikt voor:</strong> e-mail, bankieren, nieuws, lichte streaming.</p>
+        <p><strong>Minder geschikt voor:</strong> intensief videobellen, real-time online gaming.</p>
+        <div class="links-list">
+          <strong>Mogelijke aanbieders:</strong><br>
+          ${listProvidersAsLinks(geoProviders)}
+        </div>
+      </div>
+      `;
+
+      container.innerHTML = html;
+    }
+
+    function renderTvList() {
+      const tvListEl = document.getElementById("tvList");
+      if (!providersData || !providersData.tv) {
+        tvListEl.innerHTML = "<li>Informatie over TV-diensten kon niet worden geladen.</li>";
+        return;
+      }
+      const nl = providersData.tv.nl || [];
+      const fr = providersData.tv.fr || [];
+
+      let html = "";
+      if (nl.length > 0) {
+        html += "<li><strong>Nederlandse TV (via internet):</strong> " +
+                nl.map(escapeHtml).join(", ") +
+                ".</li>";
+      }
+      if (fr.length > 0) {
+        html += "<li><strong>Franse TV / streaming:</strong> " +
+                fr.map(escapeHtml).join(", ") +
+                ".</li>";
+      }
+      html += "<li style='font-size:13px;color:#555;'>Controleer altijd of uw verbinding snel en stabiel genoeg is voor meerdere streams tegelijk.</li>";
+
+      tvListEl.innerHTML = html;
+    }
+
+    function renderVpnList() {
+      const vpnListEl = document.getElementById("vpnList");
+      if (!providersData || !providersData.vpn) {
+        vpnListEl.innerHTML = "<li>Informatie over VPN-diensten kon niet worden geladen.</li>";
+        return;
+      }
+      const vpns = providersData.vpn;
+
+      let html = "";
+      vpns.forEach(v => {
+        const name = v.name || "VPN-dienst";
+        const type = v.type ? " (" + v.type + ")" : "";
+        html += "<li><strong>" + escapeHtml(name) + "</strong>" + escapeHtml(type) +
+                " – eenvoudige extra beveiligingslaag, vooral nuttig op openbare WiFi en bij gebruik van NL-diensten.</li>";
+      });
+      html += "<li style='font-size:13px;color:#555;'>Voor bankieren en DigiD is een stabiele verbinding meestal voldoende; een VPN is vooral extra bescherming en kan helpen bij toegang tot bepaalde NL-diensten.</li>";
+
+      vpnListEl.innerHTML = html;
+    }
+
+    function listProvidersAsLinks(arr) {
+      if (!arr || arr.length === 0) {
+        return '<span style="font-size:13px;color:#555;">Controleer aanbieders bij u in de regio.</span>';
+      }
+      // We hebben in providers_fr.json geen URL's, dus tonen we alleen de namen.
+      return arr
+        .map(p => escapeHtml(p.name || String(p)))
+        .join("<br>");
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // Init: providers inladen
+    document.addEventListener("DOMContentLoaded", loadProviders);
+  </script>
 </body>
 </html>
