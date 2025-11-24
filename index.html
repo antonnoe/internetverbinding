@@ -129,6 +129,7 @@
     .tech-card li { margin-bottom: 2px; }
     
     .links-list { font-size: 13px; margin-top: 6px; }
+    /* Algemene links rood */
     .links-list a { color: #800000; text-decoration: none; }
     .links-list a:hover { text-decoration: underline; }
 
@@ -151,7 +152,8 @@
 
     .section { margin-top: 24px; }
     .section ul { padding-left: 18px; }
-    .section a { color: #800000; text-decoration: none; }
+    /* Algemene sectie links rood */
+    .section a { color: #800000; text-decoration: none; } 
     .section a:hover { text-decoration: underline; }
 
     /* ACTIE KNOPPEN (Arcep + Hardware) */
@@ -162,11 +164,12 @@
       margin-top: 15px;
     }
     
-    .btn-maroon {
+    /* Specifieke styling voor de rode knoppen - forceer witte tekst */
+    a.btn-maroon {
       flex: 1;
-      min-width: 250px; /* Zorgt dat ze stapelen op hele kleine schermen */
-      background: #800000; 
-      color: #ffffff; 
+      min-width: 250px; 
+      background-color: #800000; 
+      color: #ffffff !important; /* Forceer wit, overschrijf algemene link kleur */
       text-decoration: none; 
       padding: 16px; 
       border-radius: 6px; 
@@ -177,7 +180,11 @@
       align-items: center;
       justify-content: center;
     }
-    .btn-maroon:hover { opacity: 0.9; }
+    a.btn-maroon:hover { 
+      opacity: 0.9; 
+      text-decoration: none;
+      color: #ffffff !important;
+    }
 
     footer {
       margin-top: 40px; font-size: 13px; color: #777;
@@ -203,7 +210,7 @@
       </p>
       <div class="info-blue-box">
         <strong>ℹ️ Hoe werkt het?</strong><br>
-        Deze tool vindt uw exacte adresgegevens en toont de mogelijkheden. Klik daarna op de knoppen om definitief te checken of advies over hardware te lezen.
+        Deze tool vindt uw exacte officiële adres. Dit adres heeft u nodig bij de providers. Klik op de knoppen hieronder om definitief te checken of advies over hardware te lezen.
       </div>
     </div>
 
