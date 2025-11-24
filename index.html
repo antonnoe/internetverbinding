@@ -194,21 +194,22 @@
       </p>
     </div>
 
-    <div>
+    <!-- FORM: enter activeert ook onCheckAddress() -->
+    <form onsubmit="event.preventDefault(); onCheckAddress();">
       <label for="addressInput">Adres in Frankrijk</label>
       <input id="addressInput" type="text" placeholder="Bijv. 5 route du Village, 32100 Condom">
       <div class="helper-text">
         Hoe preciezer (straat + huisnummer + postcode + gemeente), hoe beter. Binnen één postcode kan de
         situatie per straat of gebouw verschillen.
       </div>
-      <button type="button" onclick="onCheckAddress()">Toon opties</button>
+      <button type="submit">Toon opties</button>
       <div id="addressStatus"></div>
-    </div>
+    </form>
 
     <div id="results">
       <h2>Overzicht verbindingen voor uw situatie</h2>
       <div id="normalizedWrapper" class="address-summary">
-        Adres: <span id="normalizedAddress"></span>
+        Adres (volgens Base Adresse Nationale): <span id="normalizedAddress"></span>
       </div>
 
       <div class="tech-grid" id="techCards">
@@ -223,6 +224,21 @@
           <li><strong>Zo goedkoop mogelijk:</strong> bekijk ADSL/4G-box-tarieven en promoties; satelliet en LEO zijn vaak duurder per maand.</li>
           <li><strong>Veilig bankieren en DigiD:</strong> elke verbinding kan werken, maar een VPN geeft extra bescherming, vooral op openbare of gedeelde WiFi.</li>
         </ul>
+      </div>
+
+      <!-- Onderbouwing-blok -->
+      <div class="section">
+        <h3>Onderbouwing in het kort</h3>
+        <ul>
+          <li><strong>Glasvezel (fibre)</strong> wordt in testen en vergelijkingen doorgaans als meest stabiele en toekomstvaste technologie gezien (o.a. Consumentenbond, Que Choisir, Arcep).</li>
+          <li><strong>LEO-satelliet (Starlink)</strong> heeft veel lagere vertraging dan klassieke satelliet en is daardoor beter geschikt voor videobellen en thuiswerken (Duitse en Britse tests, diverse vergelijkingen).</li>
+          <li><strong>GEO-satelliet (Nordnet / Konnect)</strong> is vooral bedoeld als oplossing in “zones blanches” waar geen bruikbare vaste verbinding of 4G/5G-bereik is (Arcep, consumentenorganisaties).</li>
+          <li><strong>4G/5G-box</strong> is sterk afhankelijk van de lokale dekking; in gebieden met goede dekking kan het een serieus alternatief zijn, in randgebieden kan de snelheid wisselen (Mon Réseau Mobile, Consumentenbond).</li>
+          <li><strong>VPN-diensten</strong> zoals Surfshark, NordVPN en ProtonVPN komen in internationale vergelijkingen vaak naar voren als gebruiksvriendelijk en stabiel voor dagelijks gebruik.</li>
+        </ul>
+        <p style="font-size:13px;color:#555;">
+          Zie de links hieronder (“Bronnen en meer lezen”) voor achtergrondartikelen en vergelijkingen.
+        </p>
       </div>
 
       <div class="section">
@@ -247,13 +263,21 @@
             <a href="https://maconnexioninternet.arcep.fr/" target="_blank" rel="noopener">maconnexioninternet.arcep.fr</a>
           </li>
           <li>
-            Arcep – Uitleg over fibre, ADSL, satelliet en andere technologieën:
+            Arcep – Fibre, ADSL, satelliet: welke technologie voor mijn internettoegang?:
             <a href="https://www.arcep.fr/mes-demarches-et-services/consommateurs/fiches-pratiques/fibre-adsl-satellite-quelle-technologie-pour-mon-acces-a-internet.html"
-               target="_blank" rel="noopener">arcep.fr – fiche pratique</a>
+               target="_blank" rel="noopener">fiche pratique Arcep</a>
           </li>
           <li>
             Base Adresse Nationale – adresvalidatie en geocodering:
             <a href="https://api-adresse.data.gouv.fr/" target="_blank" rel="noopener">api-adresse.data.gouv.fr</a>
+          </li>
+          <li>
+            Consumentenbond – internet en glasvezel:
+            <a href="https://www.consumentenbond.nl/internet" target="_blank" rel="noopener">consumentenbond.nl/internet</a>
+          </li>
+          <li>
+            Que Choisir – vergelijker internetbox (fibre &amp; ADSL):
+            <a href="https://www.quechoisir.org/comparateur-fai-n21205/" target="_blank" rel="noopener">quechoisir.org – comparateur FAI</a>
           </li>
           <li>
             Orange – glasvezel en internet:
