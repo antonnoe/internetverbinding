@@ -55,7 +55,7 @@ async function selectAddress(feature) {
   // Toon resultaten blok
   document.getElementById("results").style.display = "block";
   
-  // Start de Gids-flow
+  // Start de Gids-flow met de coördinaten van BAN
   startGuideFlow(coords[1], coords[0]);
 }
 
@@ -73,24 +73,24 @@ function startGuideFlow(lat, lon) {
 
     output.innerHTML = `
         <div style="background:#f8f9fa; border:1px solid #ddd; padding:20px; border-radius:8px; text-align:center;">
-            <h3 style="margin-top:0; color:#800000;">Stap 1: Check de officiële kaart</h3>
-            <p>De publieke database loopt soms achter. Kijk daarom direct op de officiële kaart van de toezichthouder.</p>
+            <h3 style="margin-top:0; color:#800000;">Stap 1: Check de kaart</h3>
+            <p>Omdat de database voor uw regio complex is, kijken we direct op de kaart van de toezichthouder.</p>
             
             <a href="${officialUrl}" target="_blank" 
                style="display:inline-block; background:#800000; color:white; padding:12px 20px; text-decoration:none; border-radius:6px; font-weight:bold; font-size:16px; margin-bottom:15px;">
-               📍 Open Kaart op mijn adres
+               📍 Klik hier om de kaart te openen
             </a>
             
-            <p style="font-weight:bold; margin-top:15px;">Wat ziet u op of bij uw huis?</p>
+            <p style="font-weight:bold; margin-top:15px;">Welke kleur stip ziet u op uw huis?</p>
             <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-                <button onclick="showResult('fibre')" style="padding:10px 15px; border:1px solid #28a745; background:white; color:#28a745; border-radius:5px; cursor:pointer; font-weight:bold;">
-                    🟢 Groen puntje (Fibre)
+                <button onclick="showResult('fibre')" style="padding:10px 15px; border:1px solid #0055aa; background:white; color:#0055aa; border-radius:5px; cursor:pointer; font-weight:bold;">
+                    🔵/🟢 Blauw of Groen (Glasvezel)
                 </button>
                 <button onclick="showResult('dsl')" style="padding:10px 15px; border:1px solid #ffc107; background:white; color:#b38600; border-radius:5px; cursor:pointer; font-weight:bold;">
-                    🟡 Geel/Oranje (Koper/DSL)
+                    🟡 Geel (Koper/DSL)
                 </button>
                 <button onclick="showResult('none')" style="padding:10px 15px; border:1px solid #6c757d; background:white; color:#6c757d; border-radius:5px; cursor:pointer; font-weight:bold;">
-                    ⚪ Niets / Grijs
+                    ⚪ Grijs / Niets
                 </button>
             </div>
         </div>
@@ -108,7 +108,7 @@ function showResult(type) {
     if (type === 'fibre') {
         html = `
             <div style="background:#d4edda; color:#155724; padding:15px; border-radius:8px; margin-bottom:20px;">
-                <strong>Goed nieuws!</strong> Er ligt Glasvezel. U kunt tot 1 Gbit/s of meer halen.
+                <strong>Goed nieuws!</strong> U heeft Glasvezel. U kunt tot 1 Gbit/s halen (zoals op de kaart staat).
             </div>
             <div class="tech-card">
                 <span class="pill">Aanbevolen</span>
