@@ -27,16 +27,12 @@ async function fetchAddresses() {
   suggestionsBox.style.display = "block";
 
   try {
-    const url =
-      "https://api-adresse.data.gouv.fr/search/?q=" +
-      encodeURIComponent(query) +
-      "&limit=5";
+    const url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=5`;
     const res = await fetch(url);
     const data = await res.json();
     renderSuggestions(data.features);
   } catch (e) {
-    suggestionsBox.innerHTML =
-      "<div class='suggestion-item'>Geen verbinding met API.</div>";
+    suggestionsBox.innerHTML = "<div class='suggestion-item'>API Fout</div>";
   }
 }
 
@@ -45,8 +41,7 @@ function renderSuggestions(features) {
   suggestionsBox.innerHTML = "";
 
   if (!features || features.length === 0) {
-    suggestionsBox.innerHTML =
-      "<div class='suggestion-item'>Geen adres gevonden.</div>";
+    suggestionsBox.innerHTML = "<div class='suggestion-item'>Geen adres gevonden.</div>";
     suggestionsBox.style.display = "block";
     return;
   }
@@ -62,7 +57,7 @@ function renderSuggestions(features) {
 }
 
 // ------------------------------------------------------------
-// 3. SELECT ADDRESS -> ARCEP REQUEST
+// 3. SELECT ADDRESS
 // ------------------------------------------------------------
 async function selectAddress(feature) {
   document.getElementById("addressSuggestions").style.display = "none";
@@ -71,8 +66,7 @@ async function selectAddress(feature) {
 
   document.getElementById("addressInput").value = label;
   document.getElementById("normalizedAddress").textContent = label;
-  document.getElementById("gpsCoords").textContent =
-    coords[1] + ", " + coords[0];
+  document.getElementById("gpsCoords").textContent = `${coords[1]}, ${coords[0]}`;
 
   document.getElementById("results").style.display = "block";
 
@@ -80,41 +74,54 @@ async function selectAddress(feature) {
 }
 
 // ------------------------------------------------------------
-// 4. ARCEP + BACKEND FUNCTION
+// 4. BACKEND REQUEST
 // ------------------------------------------------------------
 async function fetchArcepData(address) {
   const out = document.getElementById("arcepBlock");
   out.innerHTML = "Bezig met controleren bij ARCEP...";
 
   try {
-    // Relatief pad, vercel.json regelt de routing
+    // Relatief pad!
     const url = `/api/arcep?address=${encodeURIComponent(address)}`;
-    
     const res = await fetch(url);
+    
+    // Vang HTML errors (zoals 404/500 van Vercel zelf) af
+    const contentType = res.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+       throw new Error(`Server gaf geen JSON (Status: ${res.status})`);
+    }
+
     const data = await res.json();
 
     if (!data.ok) {
-      out.innerHTML = `<p style="color:red">Fout: ${data.error || "Geen data"}</p>`;
+      // Toon de foutmelding én de details als die er zijn
+      const errorMsg = data.details ? `${data.error} (${data.details})` : data.error;
+      out.innerHTML = `<p style="color:red">Fout: ${errorMsg}</p>`;
       renderResults(null);
       return;
     }
 
+    // Succes!
+    const fibreText = data.fibre ? "Ja" : "Nee";
+    const dslText = data.dsl ? "Ja" : "Nee";
+    
     out.innerHTML = `
-      <p><strong>Resultaten voor ${data.address_found}</strong></p>
-      <p>Glasvezel (Gemeente): ${data.fibre ? "Ja" : "Nee"}</p>
-      <p>DSL (Gemeente): ${data.dsl ? "Ja" : "Nee"}</p>
+      <p style="color:#006400; font-weight:bold;">✔ Gegevens opgehaald (INSEE: ${data.insee})</p>
+      <p>Glasvezel (Gemeente): ${fibreText}</p>
+      <p>DSL (Gemeente): ${dslText}</p>
     `;
 
     renderResults(data);
+
   } catch (e) {
     console.error(e);
-    out.innerHTML = "<p>Kon geen verbinding maken met de server.</p>";
+    out.innerHTML = `<p style="color:red">Technische fout: ${e.message}</p>`;
     renderResults(null);
   }
 }
 
 // ------------------------------------------------------------
-// 5. UI RENDERING
+// 5. RENDER CARDS
 // ------------------------------------------------------------
 function renderResults(arcep) {
   const container = document.getElementById("techCards");
@@ -122,28 +129,22 @@ function renderResults(arcep) {
   
   const listLinks = (arr) => {
     if (!arr) return "";
-    return arr
-      .map(
-        (p) =>
-          `<a href="${p.url}" target="_blank" style="display:block;">${p.name}</a>`
-      )
-      .join("");
+    return arr.map(p => `<a href="${p.url}" target="_blank" style="display:block;">${p.name}</a>`).join("");
   };
 
-  const fibreStatus = arcep
-    ? arcep.fibre
-      ? "✔ Glasvezel beschikbaar"
-      : "✘ Geen glasvezel"
+  // Bepaal status tekst
+  const fibreStatus = arcep 
+    ? (arcep.fibre ? "✔ Glasvezel beschikbaar" : "✘ Geen glasvezel gevonden") 
     : "Onbekend";
-    
-  // Mobiele status bouwen
+
   let mobileStatus = "Onbekend";
   if (arcep && arcep.mobile) {
+      const m = arcep.mobile;
       mobileStatus = `
-        Orange: ${arcep.mobile.orange || "?"}<br>
-        SFR: ${arcep.mobile.sfr || "?"}<br>
-        Bouygues: ${arcep.mobile.bouygues || "?"}<br>
-        Free: ${arcep.mobile.free || "?"}
+        Orange: ${m.orange || "?"}<br>
+        SFR: ${m.sfr || "?"}<br>
+        Bouygues: ${m.bouygues || "?"}<br>
+        Free: ${m.free || "?"}
       `;
   }
 
@@ -169,20 +170,10 @@ function renderResults(arcep) {
     </div>
   `;
 
-  // TV
+  // TV & VPN vullen
   const tv = providersData?.tv?.nl || [];
-  document.getElementById("tvList").innerHTML = tv
-    .map(
-      (t) =>
-        `<li>${t.name} (<a href="${t.url}" target="_blank">link</a>)</li>`
-    )
-    .join("");
-  // VPN
+  document.getElementById("tvList").innerHTML = tv.map(t => `<li>${t.name} (<a href="${t.url}" target="_blank">link</a>)</li>`).join("");
+  
   const vpn = providersData?.vpn || [];
-  document.getElementById("vpnList").innerHTML = vpn
-    .map(
-      (v) =>
-        `<li>${v.name} – ${v.type} (<a href="${v.url}" target="_blank">site</a>)</li>`
-    )
-    .join("");
+  document.getElementById("vpnList").innerHTML = vpn.map(v => `<li>${v.name} – ${v.type} (<a href="${v.url}" target="_blank">site</a>)</li>`).join("");
 }
