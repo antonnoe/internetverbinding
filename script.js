@@ -6,12 +6,12 @@ async function loadProviders() {
   try {
     const res = await fetch("providers_fr.json");
     if (res.ok) providersData = await res.json();
-  } catch (e) { console.error("Fout laden providers:", e); }
+  } catch (e) { console.error(e); }
 }
 loadProviders();
 
 // ------------------------------------------------------------
-// 2. BAN AUTOCOMPLETE (Frontend)
+// 2. BAN LOGIC
 // ------------------------------------------------------------
 async function fetchAddresses() {
   const input = document.getElementById("addressInput");
@@ -48,81 +48,108 @@ function renderSuggestions(features) {
 async function selectAddress(feature) {
   document.getElementById("addressSuggestions").style.display = "none";
   const label = feature.properties.label;
-  const coords = feature.geometry.coordinates;
   
-  // UI vullen met frontend data
   document.getElementById("addressInput").value = label;
   document.getElementById("normalizedAddress").textContent = label;
-  document.getElementById("gpsCoords").textContent = `${coords[1]}, ${coords[0]}`;
-  document.getElementById("results").style.display = "block";
   
-  // Backend aanroepen
-  await fetchArcepData(label);
+  // UI Reset
+  document.getElementById("results").style.display = "block";
+  document.getElementById("streetScan").innerHTML = "<p>Bezig met scannen van de straat...</p>";
+  document.getElementById("techCards").innerHTML = ""; 
+
+  await fetchStreetScan(label);
 }
 
 // ------------------------------------------------------------
-// 3. BACKEND FETCH (De kritieke stap)
+// 3. STREET SCANNER FETCH
 // ------------------------------------------------------------
-async function fetchArcepData(address) {
-  const out = document.getElementById("arcepBlock");
-  out.innerHTML = "Bezig met controleren...";
-
+async function fetchStreetScan(address) {
   try {
-    // We roepen de backend aan
-    const response = await fetch(`/api/arcep?address=${encodeURIComponent(address)}`);
+    // Relatief pad naar de nieuwe scanner API
+    const res = await fetch(`/api/arcep?address=${encodeURIComponent(address)}`);
     
-    // Eerst kijken we of het antwoord HTML is (Fout) of JSON (Goed)
-    const contentType = response.headers.get("content-type");
-    
-    if (contentType && contentType.includes("text/html")) {
-        throw new Error("Routing Fout: De server gaf de homepage terug in plaats van de API. Controleer vercel.json.");
+    // Vang HTML errors
+    const contentType = res.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+       throw new Error("Server Error (HTML)");
     }
 
-    const data = await response.json();
+    const data = await res.json();
 
     if (!data.ok) {
-      out.innerHTML = `<p style="color:red">API Melding: ${data.error} <small>${data.details || ''}</small></p>`;
-      renderResults(null);
+      document.getElementById("streetScan").innerHTML = `<p style="color:red">${data.error}</p>`;
       return;
     }
 
-    out.innerHTML = `
-      <p style="color:#006400"><strong>✔ Resultaten opgehaald (INSEE: ${data.insee})</strong></p>
-      <p>Glasvezel: ${data.fibre ? "Ja" : "Nee"}</p>
-      <p>DSL: ${data.dsl ? "Ja" : "Nee"}</p>
-    `;
-    renderResults(data);
+    renderStreetList(data);
+    renderGeneralCards(data); // Toon ook de kaarten (Starlink etc)
 
   } catch (e) {
-    console.error(e);
-    out.innerHTML = `<p style="color:red; font-weight:bold">Systeem Fout: ${e.message}</p>`;
-    renderResults(null);
+    document.getElementById("streetScan").innerHTML = `<p style="color:red">Fout: ${e.message}</p>`;
   }
 }
 
 // ------------------------------------------------------------
-// 4. RENDER RESULTATEN
+// 4. RENDER STREET LIST
 // ------------------------------------------------------------
-function renderResults(arcep) {
-  const container = document.getElementById("techCards");
-  const internet = providersData?.internet || {};
+function renderStreetList(data) {
+  const container = document.getElementById("streetScan");
   
-  const listLinks = (arr) => arr ? arr.map(p => `<a href="${p.url}" target="_blank" style="display:block">${p.name}</a>`).join("") : "";
-
-  const fibreStatus = arcep ? (arcep.fibre ? "✔ Beschikbaar" : "✘ Niet beschikbaar") : "Onbekend";
-  
-  let mobileStatus = "Onbekend";
-  if (arcep && arcep.mobile) {
-      const m = arcep.mobile;
-      mobileStatus = `O: ${m.orange||'-'} | S: ${m.sfr||'-'} | B: ${m.bouygues||'-'} | F: ${m.free||'-'}`;
+  if (data.neighbors.length === 0) {
+      container.innerHTML = "<p>Geen aansluitingen gevonden in de directe omgeving (500m).</p>";
+      return;
   }
 
-  container.innerHTML = `
-    <div class="tech-card"><h3>Glasvezel</h3><p>${fibreStatus}</p>${listLinks(internet.fibre)}</div>
-    <div class="tech-card"><h3>4G/5G</h3><p>${mobileStatus}</p>${listLinks(internet["4g5g"])}</div>
+  let html = `
+    <div style="background:#f9f9f9; padding:15px; border-radius:8px; border:1px solid #ddd;">
+      <h3 style="color:#800000; margin-top:0;">Gevonden aansluitingen in de buurt</h3>
+      <p style="font-size:0.9em; color:#666;">Wij scannen 500m rondom uw locatie. Zoek uw huisnummer:</p>
+      <div style="max-height:300px; overflow-y:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:14px;">
+          <tr style="text-align:left; border-bottom:2px solid #ccc;">
+            <th style="padding:5px;">Nr.</th>
+            <th style="padding:5px;">Straat</th>
+            <th style="padding:5px;">Glasvezel?</th>
+          </tr>
+  `;
+
+  data.neighbors.forEach(n => {
+      const status = n.hasFibre 
+        ? '<span style="color:green; font-weight:bold;">Ja ✔</span>' 
+        : '<span style="color:orange;">Nog niet (wel DSL)</span>';
+      
+      // Maak de rij dikgedrukt als het waarschijnlijk de user is (gokje) maar dat is lastig.
+      // Gewoon lijst tonen.
+      html += `
+        <tr style="border-bottom:1px solid #eee;">
+            <td style="padding:8px;"><strong>${n.number}</strong></td>
+            <td style="padding:8px;">${n.street}</td>
+            <td style="padding:8px;">${status}</td>
+        </tr>
+      `;
+  });
+
+  html += `</table></div></div>`;
+  container.innerHTML = html;
+}
+
+function renderGeneralCards(data) {
+    // Simpele weergave van de algemene opties onder de lijst
+    const container = document.getElementById("techCards");
+    const internet = providersData?.internet || {};
+    const listLinks = (arr) => arr ? arr.map(p => `<a href="${p.url}" target="_blank" style="display:block">${p.name}</a>`).join("") : "";
+
+    // Bepaal algemene status op basis van of er *iets* van fibre is gevonden in de straat
+    const fibreInStreet = data.neighbors.some(n => n.hasFibre);
+    const fibreText = fibreInStreet ? "Beschikbaar in uw straat" : "Niet gevonden in de buurt";
+
+    container.innerHTML = `
+    <div class="tech-card"><h3>Glasvezel</h3><p>${fibreText}</p>${listLinks(internet.fibre)}</div>
+    <div class="tech-card"><h3>4G/5G</h3><p>Check dekking</p>${listLinks(internet["4g5g"])}</div>
     <div class="tech-card"><h3>Starlink</h3><div class="links-list">${listLinks(internet.leo)}</div></div>
   `;
   
+  // TV & VPN vullen
   const tv = providersData?.tv?.nl || [];
   document.getElementById("tvList").innerHTML = tv.map(t => `<li>${t.name} (<a href="${t.url}" target="_blank">link</a>)</li>`).join("");
   const vpn = providersData?.vpn || [];
