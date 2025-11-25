@@ -1,99 +1,80 @@
-// ------------------------------------------------------------
-// 1. LOAD PROVIDERS
-// ------------------------------------------------------------
 let providersData = null;
 
-async function loadProviders() {
+// PROVIDERS LADEN
+(async () => {
   try {
     const res = await fetch("providers_fr.json");
     if (res.ok) providersData = await res.json();
   } catch (e) {
-    console.error("Fout laden providers:", e);
+    console.error("providers.json fout:", e);
   }
-}
-loadProviders();
+})();
 
-// ------------------------------------------------------------
-// 2. BAN AUTOCOMPLETE
-// ------------------------------------------------------------
+// BAN SUGGESTIES
 async function fetchAddresses() {
   const input = document.getElementById("addressInput");
-  const suggestionsBox = document.getElementById("addressSuggestions");
-  const query = input.value.trim();
+  const box = document.getElementById("addressSuggestions");
+  const q = input.value.trim();
+  if (q.length < 3) return;
 
-  if (query.length < 3) return;
-
-  suggestionsBox.style.display = "none";
-  suggestionsBox.innerHTML = "<div class='suggestion-item'>Zoeken...</div>";
-  suggestionsBox.style.display = "block";
+  box.style.display = "block";
+  box.innerHTML = "<div class='suggestion-item'>Zoeken...</div>";
 
   try {
     const url =
       "https://api-adresse.data.gouv.fr/search/?q=" +
-      encodeURIComponent(query) +
+      encodeURIComponent(q) +
       "&limit=5";
 
     const res = await fetch(url);
     const data = await res.json();
     renderSuggestions(data.features);
   } catch (e) {
-    suggestionsBox.innerHTML =
-      "<div class='suggestion-item'>Geen verbinding met API.</div>";
+    box.innerHTML = "<div class='suggestion-item'>API fout</div>";
   }
 }
 
 function renderSuggestions(features) {
-  const suggestionsBox = document.getElementById("addressSuggestions");
-  suggestionsBox.innerHTML = "";
+  const box = document.getElementById("addressSuggestions");
+  box.innerHTML = "";
 
   if (!features || features.length === 0) {
-    suggestionsBox.innerHTML =
-      "<div class='suggestion-item'>Geen adres gevonden.</div>";
-    suggestionsBox.style.display = "block";
+    box.innerHTML = "<div class='suggestion-item'>Geen adres gevonden</div>";
     return;
   }
 
   features.forEach((f) => {
     const div = document.createElement("div");
     div.className = "suggestion-item";
-    const label = f.properties.label;
-
-    div.innerHTML = `<strong>${label}</strong>`;
+    div.innerHTML = `<strong>${f.properties.label}</strong>`;
     div.onclick = () => selectAddress(f);
-    suggestionsBox.appendChild(div);
+    box.appendChild(div);
   });
-
-  suggestionsBox.style.display = "block";
 }
 
-// ------------------------------------------------------------
-// 3. SELECT ADDRESS → ARCEP REQUEST
-// ------------------------------------------------------------
+// ADRES GEKOZEN
 async function selectAddress(feature) {
-  document.getElementById("addressSuggestions").style.display = "none";
+  const box = document.getElementById("addressSuggestions");
+  box.style.display = "none";
 
   const label = feature.properties.label;
-  const coords = feature.geometry.coordinates;
+  const [lon, lat] = feature.geometry.coordinates;
 
   document.getElementById("addressInput").value = label;
   document.getElementById("normalizedAddress").textContent = label;
-  document.getElementById("gpsCoords").textContent =
-    coords[1] + ", " + coords[0];
+  document.getElementById("gpsCoords").textContent = `${lat}, ${lon}`;
 
   document.getElementById("results").style.display = "block";
 
   await fetchArcepData(label);
 }
 
-// ------------------------------------------------------------
-// 4. ARCEP + BACKEND FUNCTION
-// ------------------------------------------------------------
+// ARCEP BACKEND
 async function fetchArcepData(address) {
   const out = document.getElementById("arcepBlock");
-  out.innerHTML = "Bezig met controleren…";
+  out.innerHTML = "Controleren…";
 
   try {
-    // >>>>>>>  ABSOLUTE VERCEL URL — BELANGRIJK  <<<<<<<
     const url =
       "https://internetverbinding.vercel.app/api/arcep?address=" +
       encodeURIComponent(address);
@@ -102,8 +83,7 @@ async function fetchArcepData(address) {
     const data = await res.json();
 
     if (!data.ok) {
-      out.innerHTML =
-        "<p>Geen ARCEP-gegevens beschikbaar. Algemene opties worden getoond.</p>";
+      out.innerHTML = "<p>Geen ARCEP-data. Wij tonen algemene opties.</p>";
       renderResults(null);
       return;
     }
@@ -116,34 +96,29 @@ async function fetchArcepData(address) {
 
     renderResults(data);
   } catch (e) {
-    out.innerHTML =
-      "<p>Fout bij ophalen ARCEP-data. Algemene opties worden getoond.</p>";
+    out.innerHTML = "<p>Fout — algemene opties getoond.</p>";
     renderResults(null);
   }
 }
 
-// ------------------------------------------------------------
-// 5. UI RENDERING
-// ------------------------------------------------------------
+// RENDER RESULTATEN
 function renderResults(arcep) {
-  const container = document.getElementById("techCards");
-  const internet = providersData?.internet || {};
+  const c = document.getElementById("techCards");
+  const net = providersData?.internet || {};
 
-  const listLinks = (arr) => {
-    if (!arr) return "";
-    return arr
-      .map(
+  const list = (arr) =>
+    arr
+      ?.map(
         (p) =>
           `<a href="${p.url}" target="_blank" style="display:block;">${p.name}</a>`
       )
-      .join("");
-  };
+      .join("") || "";
 
   const fibreStatus = arcep
     ? arcep.fibre
       ? "✔ Glasvezel beschikbaar"
       : "✘ Geen glasvezel"
-    : "Onbekend (geen ARCEP-data)";
+    : "Onbekend";
 
   const mobileStatus = arcep
     ? `
@@ -151,46 +126,38 @@ function renderResults(arcep) {
       SFR: ${arcep.mobile.sfr || "?"}<br>
       Bouygues: ${arcep.mobile.bouygues || "?"}<br>
       Free: ${arcep.mobile.free || "?"}
-    `
+      `
     : "Onbekend";
 
-  container.innerHTML = `
+  c.innerHTML = `
     <div class="tech-card">
       <span class="pill">Fibre</span>
       <h3>Glasvezel</h3>
       <p>${fibreStatus}</p>
-      <div class="links-list">${listLinks(internet.fibre)}</div>
+      ${list(net.fibre)}
     </div>
 
     <div class="tech-card">
       <span class="pill">4G/5G</span>
       <h3>4G/5G Box</h3>
       <p>${mobileStatus}</p>
-      <div class="links-list">${listLinks(internet["4g5g"])}</div>
+      ${list(net["4g5g"])}
     </div>
 
     <div class="tech-card">
       <span class="pill">Starlink</span>
       <h3>Satelliet (LEO)</h3>
-      <div class="links-list">${listLinks(internet.leo)}</div>
+      ${list(net.leo)}
     </div>
   `;
 
-  // TV
-  const tv = providersData?.tv?.nl || [];
-  document.getElementById("tvList").innerHTML = tv
-    .map(
-      (t) =>
-        `<li>${t.name} (<a href="${t.url}" target="_blank">link</a>)</li>`
-    )
-    .join("");
+  document.getElementById("tvList").innerHTML =
+    (providersData?.tv?.nl || [])
+      .map((t) => `<li>${t.name} (<a href="${t.url}">link</a>)</li>`)
+      .join("");
 
-  // VPN
-  const vpn = providersData?.vpn || [];
-  document.getElementById("vpnList").innerHTML = vpn
-    .map(
-      (v) =>
-        `<li>${v.name} – ${v.type} (<a href="${v.url}" target="_blank">site</a>)</li>`
-    )
-    .join("");
+  document.getElementById("vpnList").innerHTML =
+    (providersData?.vpn || [])
+      .map((v) => `<li>${v.name} – ${v.type} (<a href="${v.url}">site</a>)</li>`)
+      .join("");
 }
