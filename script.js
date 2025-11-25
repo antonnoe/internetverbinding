@@ -87,15 +87,15 @@ async function fetchArcepData(address) {
   out.innerHTML = "Bezig met controleren...";
 
   try {
-    // GEBRUIK RELATIEF PAD - vercel.json regelt de routing
+    // RELATIEF PAD - vercel.json regelt de rest
     const url = `/api/arcep?address=${encodeURIComponent(address)}`;
     
     const res = await fetch(url);
     
-    // Eerst checken of we JSON hebben, anders is er een routing fout
+    // Check of we JSON krijgen (geen HTML error)
     const contentType = res.headers.get("content-type");
     if (!contentType || !contentType.includes("application/json")) {
-       throw new Error("Server gaf geen JSON terug (HTML Error)");
+       throw new Error("Server gaf geen JSON (HTML Error)");
     }
 
     const data = await res.json();
