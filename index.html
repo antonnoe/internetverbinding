@@ -1,312 +1,249 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Internetverbinding – Dataverbinding Frankrijk</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Internetverbinding – Dataverbinding Frankrijk</title>
+    <style>
+        /* --- BASIS OPMAAK --- */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f4f4f9; color: #333; max-width: 800px; margin: 0 auto; padding-bottom: 140px; }
+        h1 { color: #800000; margin-bottom: 5px; }
+        h3 { color: #666; margin-top: 0; font-weight: normal; font-size: 1.1em; }
+        
+        /* --- ZOEKBALK --- */
+        .input-group { position: relative; margin-top: 20px; }
+        input[type="text"] { width: 100%; padding: 15px; font-size: 16px; border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box; transition: border-color 0.3s; }
+        input[type="text"]:focus { border-color: #800000; outline: none; }
+        
+        /* --- SUGGESTIES --- */
+        #addressSuggestions { display: none; border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px; background: white; position: absolute; width: 100%; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-height: 300px; overflow-y: auto; }
+        .suggestion-item { padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #eee; }
+        .suggestion-item:last-child { border-bottom: none; }
+        .suggestion-item:hover { background-color: #f9f9f9; color: #800000; }
 
-<style>
-/* --- BASIS STYLING --- */
-body { font-family: Arial, sans-serif; padding:20px; background:white; color:#000; max-width:800px; margin:0 auto; padding-bottom: 120px; }
-h1 { color:#800000; margin-bottom:5px; }
-h3 { color:#800000; margin-top:25px; margin-bottom:10px; }
-.pill { background:#800000; color:white; padding:4px 8px; border-radius:20px; font-size:11px; display:inline-block; margin-bottom:5px; }
-.tech-card { border:1px solid #ccc; padding:15px; border-radius:8px; margin-bottom:20px; background:#fff; }
-.suggestion-item { padding:10px; border-bottom:1px solid #eee; cursor:pointer; }
-.suggestion-item:hover { background:#f9f9f9; }
-#addressSuggestions { border:1px solid #ccc; margin-top:5px; border-radius:6px; display:none; background:white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-ul { padding-left:20px; margin-top:0; }
-li { margin-bottom:5px; }
-footer { margin-top:50px; border-top:1px solid #eee; padding-top:20px; color:#888; font-size:13px; text-align:center; }
+        /* --- RESULTATEN BLOK --- */
+        #results { display: none; margin-top: 30px; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-/* --- LINK STYLING --- */
-a { color: #0056b3; text-decoration: none; }
-a:hover { text-decoration: underline; }
+        /* --- KAART INSTRUCTIE --- */
+        .map-box { background: white; border-left: 5px solid #800000; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); text-align: center; }
+        .btn-map { display: inline-block; background: #800000; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; margin: 15px 0; transition: background 0.2s; }
+        .btn-map:hover { background: #600000; }
 
-/* --- DE STICKY AFSTANDSBEDIENING --- */
-#stickyContainer:empty { display: none; } /* Verberg als leeg */
+        /* --- ADVIES KAARTEN --- */
+        .tech-card { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #eee; }
+        .pill { display: inline-block; padding: 4px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; color: white; background: #800000; }
+        .links-list a { display: block; color: #0056b3; text-decoration: none; padding: 5px 0; border-bottom: 1px dotted #eee; }
+        .links-list a:hover { text-decoration: underline; color: #003d82; }
 
-.sticky-bottom-bar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background: #ffffff;
-    border-top: 4px solid #800000;
-    box-shadow: 0 -5px 20px rgba(0,0,0,0.15);
-    padding: 15px 10px;
-    text-align: center;
-    z-index: 10000;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-}
+        /* --- STICKY FOOTER (AFSTANDSBEDIENING) --- */
+        #stickyContainer { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 4px solid #800000; box-shadow: 0 -5px 20px rgba(0,0,0,0.15); padding: 15px; text-align: center; z-index: 9999; }
+        .sticky-buttons { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        .sticky-btn { padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; border: 2px solid #ddd; background: white; transition: all 0.2s; }
+        .sticky-btn:hover { transform: translateY(-2px); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        
+        .btn-green { border-color: #28a745; color: #28a745; }
+        .btn-green:hover { background: #28a745; color: white; }
+        .btn-yellow { border-color: #ffc107; color: #d39e00; }
+        .btn-yellow:hover { background: #ffc107; color: black; }
+        .btn-gray { border-color: #6c757d; color: #6c757d; }
+        .btn-gray:hover { background: #6c757d; color: white; }
 
-.sticky-buttons {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    justify-content: center;
-}
-
-.sticky-label {
-    font-size: 14px; 
-    color: #333; 
-    font-weight: bold;
-}
-
-.sticky-btn {
-    padding: 12px 18px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 14px;
-    border: 2px solid;
-    background: white;
-    transition: all 0.2s;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-.sticky-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
-.sticky-btn:active { transform: translateY(0); }
-
-/* Kleuren voor de knoppen */
-.btn-green { border-color: #28a745; color: #28a745; }
-.btn-green:hover { background: #28a745; color: white; }
-
-.btn-yellow { border-color: #d39e00; color: #d39e00; }
-.btn-yellow:hover { background: #ffc107; color: black; }
-
-.btn-gray { border-color: #6c757d; color: #6c757d; }
-.btn-gray:hover { background: #6c757d; color: white; }
-</style>
+        footer { margin-top: 50px; text-align: center; font-size: 12px; color: #999; border-top: 1px solid #eee; padding-top: 20px; }
+    </style>
 </head>
-
 <body>
 
-<h1>Internetverbinding</h1>
-<h3 style="color:#777; margin-top:0; font-weight:normal;">Dataverbinding Frankrijk</h3>
+    <h1>Internetverbinding</h1>
+    <h3>Dataverbinding Frankrijk</h3>
 
-<p>Vul uw adres in. Wij openen direct de officiële dekkingskaart voor uw locatie.</p>
+    <p>Vul uw adres in. Wij openen direct de officiële ARCEP-kaart zodat u kunt zien wat er op uw adres beschikbaar is.</p>
 
-<input id="addressInput" type="text" placeholder="Bijv. 22 Rue de Sehen" 
-       style="width:100%; padding:14px; font-size:16px; box-sizing:border-box; border:2px solid #ccc; border-radius:6px;" />
+    <div class="input-group">
+        <input id="addressInput" type="text" placeholder="Bijv. 22 Rue de Sehen, Montcavrel" autocomplete="off">
+        <div id="addressSuggestions"></div>
+    </div>
 
-<div id="addressSuggestions"></div>
+    <div id="results">
+        <div id="mapInstruction"></div>
+        
+        <div id="finalAdvice"></div>
+    </div>
 
-<div id="results" style="display:none; margin-top:30px;">
-  <div id="arcepOutput" style="margin-bottom:30px;"></div>
-
-  <div id="adviceSection"></div>
-</div>
-
-<div id="stickyContainer"></div>
-
-<footer>
-  Mogelijk gemaakt door Infofrankrijk.com en Nederlanders.fr
-</footer>
-
-<script>
-// --- 1. DATA LADEN ---
-let providersData = null;
-fetch("providers_fr.json")
-    .then(res => res.json())
-    .then(data => { providersData = data; })
-    .catch(err => console.error("Fout bij laden providers:", err));
-
-// --- 2. ADRES ZOEKEN (Direct naar BAN API) ---
-const input = document.getElementById("addressInput");
-const suggestionsBox = document.getElementById("addressSuggestions");
-let debounceTimer;
-
-input.addEventListener('input', function() {
-    clearTimeout(debounceTimer);
-    const query = this.value.trim();
-    
-    if (query.length < 3) {
-        suggestionsBox.style.display = 'none';
-        return;
-    }
-
-    debounceTimer = setTimeout(() => {
-        fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=5`)
-            .then(res => res.json())
-            .then(data => renderSuggestions(data.features))
-            .catch(err => console.error(err));
-    }, 300);
-});
-
-function renderSuggestions(features) {
-    suggestionsBox.innerHTML = "";
-    if (!features || features.length === 0) {
-        suggestionsBox.style.display = 'none';
-        return;
-    }
-    
-    features.forEach(f => {
-        const div = document.createElement("div");
-        div.className = "suggestion-item";
-        div.innerHTML = `<strong>${f.properties.label}</strong><br><span style="font-size:12px;color:#666;">${f.properties.context}</span>`;
-        div.onclick = () => selectAddress(f);
-        suggestionsBox.appendChild(div);
-    });
-    suggestionsBox.style.display = 'block';
-}
-
-// --- 3. ADRES GEKOZEN -> START GIDS ---
-function selectAddress(feature) {
-    suggestionsBox.style.display = "none";
-    input.value = feature.properties.label;
-    
-    const coords = feature.geometry.coordinates; // [lon, lat]
-    const lat = coords[1];
-    const lon = coords[0];
-
-    // UI Reset
-    document.getElementById("results").style.display = "block";
-    document.getElementById("adviceSection").innerHTML = ""; 
-    
-    // Start de flow
-    showMapGuide(lat, lon);
-}
-
-function showMapGuide(lat, lon) {
-    const output = document.getElementById("arcepOutput");
-    
-    // Link naar kaart (max zoom 18-20)
-    const officialUrl = `https://maconnexioninternet.arcep.fr/?lat=${lat}&lng=${lon}&zoom=20&mode=debit&techno=filaire`;
-
-    // Toon instructie
-    output.innerHTML = `
-        <div style="background:#f0f7ff; border:1px solid #cce5ff; padding:20px; border-radius:8px; text-align:center;">
-            <h3 style="margin-top:0; color:#004085;">Stap 1: Check de kaart</h3>
-            <p style="color:#555;">
-                Klik op de knop hieronder. De kaart opent in een nieuw tabblad, precies op uw dak.<br>
-                <strong>Kijk welk gekleurd bolletje u op uw huis ziet.</strong>
-            </p>
-            
-            <a href="${officialUrl}" target="_blank" 
-               style="display:inline-block; background:#800000; color:white; padding:14px 24px; text-decoration:none; border-radius:6px; font-weight:bold; font-size:18px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
-               📍 Open de Kaart
-            </a>
-            
-            <p style="margin-top:20px; font-size:0.9em; color:#666;">
-                Kom daarna terug naar dit scherm en gebruik de knoppen onderaan.
-            </p>
+    <div id="stickyContainer">
+        <div style="margin-bottom: 10px; font-weight: bold; color: #555;">Stap 2: Wat zag u op de kaart?</div>
+        <div class="sticky-buttons">
+            <button class="sticky-btn btn-green" onclick="showResult('fibre')">🟢 Groen (Glasvezel)</button>
+            <button class="sticky-btn btn-yellow" onclick="showResult('dsl')">🟡 Geel (Koper)</button>
+            <button class="sticky-btn btn-gray" onclick="showResult('none')">⚪ Grijs / Niets</button>
         </div>
-    `;
+    </div>
 
-    // INJECTEER DE STICKY BALK
-    const sticky = document.getElementById("stickyContainer");
-    sticky.innerHTML = `
-        <div class="sticky-bottom-bar">
-            <div class="sticky-label">Stap 2: Wat zag u op de kaart?</div>
-            <div class="sticky-buttons">
-                <button class="sticky-btn btn-green" onclick="showResult('fibre')">
-                    🟢 Groen (Glasvezel)
-                </button>
-                <button class="sticky-btn btn-yellow" onclick="showResult('dsl')">
-                    🟡 Geel (Koper)
-                </button>
-                <button class="sticky-btn btn-gray" onclick="showResult('none')">
-                    ⚪ Grijs / Niets
-                </button>
-            </div>
-        </div>
-    `;
-}
+    <footer>
+        Mogelijk gemaakt door Infofrankrijk.com en Nederlanders.fr
+    </footer>
 
-// --- 4. RESULTAAT TONEN ---
-window.showResult = function(type) {
-    // Verwijder balk
-    document.getElementById("stickyContainer").innerHTML = "";
+    <script>
+        // --- 1. HARDE DATA (Geen externe bestanden meer nodig) ---
+        const providers = {
+            fibre: [
+                { name: "Orange Fibre", url: "https://boutique.orange.fr/internet/offres-fibre" },
+                { name: "SFR Fibre", url: "https://www.sfr.fr/offre-internet.html" },
+                { name: "Bouygues Fibre", url: "https://www.bouyguestelecom.fr/offres-internet/fibre" },
+                { name: "Free Fibre", url: "https://www.free.fr/freebox/" }
+            ],
+            dsl: [
+                { name: "Orange ADSL", url: "https://boutique.orange.fr/internet" },
+                { name: "SFR ADSL", url: "https://www.sfr.fr/offre-internet.html" }
+            ],
+            starlink: [
+                { name: "Starlink", url: "https://www.starlink.com/" }
+            ],
+            box4g: [
+                { name: "Orange 4G Home", url: "https://boutique.orange.fr/internet/offres-4g-home" },
+                { name: "Bouygues 4G Box", url: "https://www.bouyguestelecom.fr/offres-internet/4g-box" }
+            ],
+            tv: [
+                { name: "NLZIET (NL TV)", url: "https://www.nlziet.nl/" },
+                { name: "Canal Digitaal (NL TV)", url: "https://www.canaldigitaal.nl/" }
+            ],
+            vpn: [
+                { name: "NordVPN", url: "https://nordvpn.com/" },
+                { name: "Surfshark", url: "https://surfshark.com/" }
+            ]
+        };
 
-    const container = document.getElementById("adviceSection");
-    const internet = providersData?.internet || {};
-    
-    // Helper voor linklijstjes
-    const listLinks = (arr) => arr ? arr.map(p => `<a href="${p.url}" target="_blank" style="display:block; margin-bottom:6px; padding:5px 0; border-bottom:1px dotted #eee;">${p.name} &rarr;</a>`).join("") : "";
-    const renderListItems = (arr) => arr ? arr.map(item => `<li><a href="${item.url}" target="_blank">${item.name}</a></li>`).join("") : "";
+        // --- 2. ADRES ZOEKEN (BAN API) ---
+        const input = document.getElementById('addressInput');
+        const suggestions = document.getElementById('addressSuggestions');
+        let debounce;
 
-    let content = "";
+        input.addEventListener('input', function() {
+            clearTimeout(debounce);
+            const q = this.value;
+            if (q.length < 3) { suggestions.style.display = 'none'; return; }
+            
+            debounce = setTimeout(() => {
+                fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&limit=5`)
+                    .then(r => r.json())
+                    .then(data => {
+                        suggestions.innerHTML = '';
+                        if(data.features && data.features.length > 0) {
+                            suggestions.style.display = 'block';
+                            data.features.forEach(f => {
+                                const div = document.createElement('div');
+                                div.className = 'suggestion-item';
+                                div.innerHTML = `<strong>${f.properties.label}</strong><br><small>${f.properties.context}</small>`;
+                                div.onclick = () => selectAddress(f);
+                                suggestions.appendChild(div);
+                            });
+                        } else {
+                            suggestions.style.display = 'none';
+                        }
+                    });
+            }, 300);
+        });
 
-    // KEUZE: GLASVEZEL
-    if (type === 'fibre') {
-        content = `
-            <div style="background:#d4edda; color:#155724; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #c3e6cb;">
-                <strong>✅ Gefeliciteerd!</strong> Er ligt Glasvezel (FttH) bij uw woning.<br>
-                U kunt internet tot 1 Gbit/s of sneller krijgen.
-            </div>
-            <h3>Aanbevolen: Glasvezel</h3>
-            <div class="tech-card">
-                <span class="pill">Beste Keuze</span>
-                <p>Stabiel, snel en geschikt voor TV, werken en gamen.</p>
-                <div class="links-list">${listLinks(internet.fibre)}</div>
-            </div>
-        `;
-    } 
-    // KEUZE: DSL
-    else if (type === 'dsl') {
-        content = `
-            <div style="background:#fff3cd; color:#856404; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #ffeeba;">
-                <strong>⚠️ Let op:</strong> U heeft waarschijnlijk een koperlijn (ADSL). <br>
-                Als u ver van de centrale woont, is dit traag. Overweeg Starlink.
-            </div>
-            <h3>Optie A: Vaste Lijn</h3>
-            <div class="tech-card">
-                <span class="pill">Standaard</span>
-                <p>Via de telefoonlijn (Orange/Sosh/SFR).</p>
-                <div class="links-list">${listLinks(internet.fibre)}</div>
-            </div>
-            <h3>Optie B: Satelliet (Sneller)</h3>
-            <div class="tech-card">
-                <span class="pill">Alternatief</span>
-                <p>Starlink is vaak veel sneller dan een lange ADSL lijn.</p>
-                <div class="links-list">${listLinks(internet.leo)}</div>
-            </div>
-        `;
-    } 
-    // KEUZE: NIETS
-    else {
-        content = `
-            <div style="background:#f8d7da; color:#721c24; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #f5c6cb;">
-                <strong>❌ Buitengebied:</strong> Geen vaste lijn gevonden.<br>
-                Starlink of 4G is hier noodzakelijk.
-            </div>
-            <h3>Beste Oplossing: Starlink</h3>
-            <div class="tech-card">
-                <span class="pill" style="background:#006400;">Aanbevolen</span>
-                <p>Werkt overal, hoge snelheid, maandelijks opzegbaar.</p>
-                <div class="links-list">${listLinks(internet.leo)}</div>
-            </div>
-            <h3>Alternatief: 4G Box</h3>
-            <div class="tech-card">
-                <span class="pill">Check Bereik</span>
-                <p>Alleen als u buiten goed mobiel bereik heeft.</p>
-                <div class="links-list">${listLinks(internet["4g5g"])}</div>
-            </div>
-        `;
-    }
+        // --- 3. ADRES GESELECTEERD ---
+        function selectAddress(feature) {
+            suggestions.style.display = 'none';
+            input.value = feature.properties.label;
+            const [lon, lat] = feature.geometry.coordinates;
 
-    // TV & VPN Toevoegen
-    const tvItems = renderListItems(providersData?.tv?.nl);
-    const vpnItems = renderListItems(providersData?.vpn);
+            // UI Reset
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('finalAdvice').innerHTML = '';
+            document.getElementById('stickyContainer').style.display = 'block';
 
-    if (tvItems) {
-        content += `<h3>Nederlandse TV</h3><div class="tech-card"><ul>${tvItems}</ul></div>`;
-    }
-    if (vpnItems) {
-        content += `<h3>Veiligheid & VPN</h3><div class="tech-card"><p style="font-size:0.9em;color:#666;">Voor NL-zenders en veilig bankieren.</p><ul>${vpnItems}</ul></div>`;
-    }
+            // Toon instructie
+            const arcepUrl = `https://maconnexioninternet.arcep.fr/?lat=${lat}&lng=${lon}&zoom=20&mode=debit&techno=filaire`;
+            
+            document.getElementById('mapInstruction').innerHTML = `
+                <div class="map-box">
+                    <h3 style="color:#800000; margin-top:0;">Stap 1: Controleer uw huis</h3>
+                    <p>De publieke database is niet altijd compleet. Kijk daarom op de officiële kaart.</p>
+                    <a href="${arcepUrl}" target="_blank" class="btn-map">📍 Open Kaart op mijn Dak</a>
+                    <p style="font-size:0.9em; color:#666;">(Er opent een nieuw venster. Kom daarna terug hierheen.)</p>
+                </div>
+            `;
+            
+            // Scroll een beetje
+            document.getElementById('mapInstruction').scrollIntoView({ behavior: 'smooth' });
+        }
 
-    container.innerHTML = content;
-    
-    // Scrollen
-    setTimeout(() => {
-        container.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 100);
-};
-</script>
+        // --- 4. RESULTAAT TONEN ---
+        window.showResult = function(type) {
+            const container = document.getElementById('finalAdvice');
+            document.getElementById('stickyContainer').style.display = 'none'; // Verberg balk
+
+            const makeLinks = (list) => list.map(i => `<a href="${i.url}" target="_blank">${i.name} &rarr;</a>`).join('');
+
+            let html = '';
+
+            if (type === 'fibre') {
+                html += `
+                    <div style="background:#d4edda; color:#155724; padding:15px; border-radius:8px; margin:20px 0; border:1px solid #c3e6cb;">
+                        <strong>✅ Fantastisch!</strong> U heeft Glasvezel.
+                    </div>
+                    <div class="tech-card">
+                        <span class="pill">Beste Keuze</span>
+                        <h3>Glasvezel (Fibre)</h3>
+                        <p>Tot 1 Gbit/s of sneller. Stabiel en toekomstbestendig.</p>
+                        <div class="links-list">${makeLinks(providers.fibre)}</div>
+                    </div>
+                `;
+            } else if (type === 'dsl') {
+                html += `
+                    <div style="background:#fff3cd; color:#856404; padding:15px; border-radius:8px; margin:20px 0; border:1px solid #ffeeba;">
+                        <strong>⚠️ Let op:</strong> U heeft waarschijnlijk ADSL (koper). Controleer de snelheid.
+                    </div>
+                    <div class="tech-card">
+                        <span class="pill">Standaard</span>
+                        <h3>ADSL/VDSL</h3>
+                        <p>Via de telefoonlijn. Snelheid afhankelijk van afstand.</p>
+                        <div class="links-list">${makeLinks(providers.dsl)}</div>
+                    </div>
+                    <div class="tech-card">
+                        <span class="pill">Sneller Alternatief</span>
+                        <h3>Starlink</h3>
+                        <div class="links-list">${makeLinks(providers.starlink)}</div>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div style="background:#f8d7da; color:#721c24; padding:15px; border-radius:8px; margin:20px 0; border:1px solid #f5c6cb;">
+                        <strong>❌ Buitengebied:</strong> Geen vaste lijn zichtbaar.
+                    </div>
+                    <div class="tech-card">
+                        <span class="pill" style="background:#006400;">Aanbevolen</span>
+                        <h3>Starlink (Satelliet)</h3>
+                        <p>De enige stabiele optie voor hoge snelheid in buitengebieden.</p>
+                        <div class="links-list">${makeLinks(providers.starlink)}</div>
+                    </div>
+                    <div class="tech-card">
+                        <span class="pill">Alternatief</span>
+                        <h3>4G Box</h3>
+                        <div class="links-list">${makeLinks(providers.box4g)}</div>
+                    </div>
+                `;
+            }
+
+            // Voeg TV en VPN toe
+            html += `
+                <h3>Extra Diensten</h3>
+                <div class="tech-card">
+                    <strong>Nederlandse TV</strong>
+                    <div class="links-list">${makeLinks(providers.tv)}</div>
+                    <br>
+                    <strong>Veiligheid & VPN</strong>
+                    <div class="links-list">${makeLinks(providers.vpn)}</div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+            container.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
 
 </body>
 </html>
