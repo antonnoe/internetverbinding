@@ -1,456 +1,104 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Internetverbinding Wegwijzer – Frankrijk</title>
-  <meta name="description" content="Check uw internetmogelijkheden in Frankrijk. Wegwijzer voor Fibre, 4G, Starlink en Hardware advies.">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #ffffff;
-      color: #000000;
-      margin: 0;
-      padding: 20px;
-      line-height: 1.5;
-    }
-    h1, h2 { color: #800000; margin-top: 0; }
-    h3 { color: #555555; }
-    .subtitle { color: #777777; margin-top: 4px; margin-bottom: 20px; }
-    .container { max-width: 960px; margin: 0 auto; }
-    
-    /* Introductie */
-    .intro-box {
-      background: #f8f8f8;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-      padding: 16px 20px;
-      margin-bottom: 24px;
-    }
-    
-    .info-blue-box {
-      background: #e3f2fd; 
-      border-left: 4px solid #2196f3; 
-      padding: 10px; 
-      font-size: 14px; 
-      color: #0d47a1;
-      margin-top: 10px;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Internetverbinding – Dataverbinding Frankrijk</title>
 
-    /* Zoekveld en Dropdown styling */
-    .search-container {
-      position: relative;
-      max-width: 100%;
-      margin-bottom: 30px;
-    }
-    label { font-weight: bold; display: block; margin-bottom: 6px; }
-    
-    .input-group {
-      display: flex;
-      gap: 10px;
-    }
-    input[type="text"] {
-      flex-grow: 1;
-      padding: 12px;
-      font-size: 16px;
-      border-radius: 4px;
-      border: 1px solid #cccccc;
-    }
-    button.search-btn {
-      background: #800000;
-      color: #ffffff;
-      padding: 12px 24px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 16px;
-      white-space: nowrap;
-    }
-    button.search-btn:hover { opacity: 0.95; }
-
-    /* De dropdown lijst met suggesties */
-    #addressSuggestions {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
-      background: #fff;
-      border: 1px solid #ccc;
-      border-top: none;
-      border-radius: 0 0 4px 4px;
-      z-index: 1000;
-      max-height: 250px;
-      overflow-y: auto;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      display: none;
-    }
-    .suggestion-item {
-      padding: 10px 12px;
-      cursor: pointer;
-      border-bottom: 1px solid #eee;
-    }
-    .suggestion-item:last-child { border-bottom: none; }
-    .suggestion-item:hover { background-color: #f2e6e6; }
-    .suggestion-context { font-size: 0.85em; color: #666; float: right; }
-
-    .helper-text { font-size: 13px; color: #666666; margin-top: 8px; }
-
-    /* Resultaten sectie */
-    #results {
-      margin-top: 30px;
-      border-top: 2px solid #800000;
-      padding-top: 20px;
-      display: none;
-    }
-    .address-summary {
-      font-size: 16px;
-      background: #eef; 
-      padding: 10px; 
-      border-left: 4px solid #800000;
-      margin-bottom: 20px;
-    }
-
-    /* Kaarten Grid */
-    .tech-grid { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
-    .tech-card {
-      flex: 1 1 260px;
-      border: 1px solid #dddddd;
-      border-radius: 10px;
-      padding: 14px 16px;
-      box-sizing: border-box;
-      background: #ffffff;
-    }
-    .tech-card h3 { margin-top: 0; margin-bottom: 8px; color: #800000; }
-    .pill {
-      display: inline-block; font-size: 12px; padding: 2px 8px;
-      border-radius: 999px; background: #f2e6e6; color: #800000; margin-bottom: 8px;
-    }
-    .tech-card ul { padding-left: 18px; margin: 6px 0; }
-    .tech-card li { margin-bottom: 2px; }
-    
-    .links-list { font-size: 13px; margin-top: 6px; }
-    /* Algemene links rood */
-    .links-list a { color: #800000; text-decoration: none; }
-    .links-list a:hover { text-decoration: underline; }
-
-    /* Tips Boxen */
-    .tips-box {
-      background: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 8px;
-      padding: 14px 16px; margin-bottom: 24px;
-    }
-    .savings-box {
-      background: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 8px;
-      padding: 14px 16px; margin-bottom: 24px;
-    }
-    .savings-box h3 { color: #2e7d32; margin-top: 0; }
-
-    .forum-box {
-      background: #fff3cd; border: 1px solid #ffeeba; border-radius: 8px;
-      padding: 14px 16px; margin-bottom: 24px; color: #856404;
-    }
-    .forum-box a { color: #856404; font-weight: bold; text-decoration: underline; }
-
-    .section { margin-top: 24px; }
-    .section ul { padding-left: 18px; }
-    /* Algemene sectie links rood */
-    .section a { color: #800000; text-decoration: none; } 
-    .section a:hover { text-decoration: underline; }
-
-    /* ACTIE KNOPPEN (Arcep + Hardware) */
-    .action-buttons-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 15px;
-      margin-top: 15px;
-    }
-    
-    /* Specifieke styling voor de rode knoppen - forceer witte tekst */
-    a.btn-maroon {
-      flex: 1;
-      min-width: 250px; 
-      background-color: #800000; 
-      color: #ffffff !important; /* Forceer wit, overschrijf algemene link kleur */
-      text-decoration: none; 
-      padding: 16px; 
-      border-radius: 6px; 
-      text-align: center; 
-      font-weight: bold;
-      transition: opacity 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    a.btn-maroon:hover { 
-      opacity: 0.9; 
-      text-decoration: none;
-      color: #ffffff !important;
-    }
-
-    footer {
-      margin-top: 40px; font-size: 13px; color: #777;
-      border-top: 1px solid #ddd; padding-top: 15px;
-      line-height: 1.6;
-    }
-
-    @media (max-width: 600px) {
-      .input-group { flex-direction: column; }
-      button.search-btn { width: 100%; }
-      .action-buttons-container { flex-direction: column; }
-    }
-  </style>
+<style>
+body { 
+    font-family: Arial, sans-serif; 
+    margin:0; 
+    padding:20px; 
+    background:white; 
+    color:#000; 
+}
+h1 { color:#800000; margin-bottom:5px; }
+h3 { color:#800000; margin-top:30px; }
+.pill { 
+    background:#800000; 
+    color:white; 
+    padding:4px 8px; 
+    border-radius:20px; 
+    font-size:12px; 
+}
+.tech-card { 
+    border:1px solid #ccc; 
+    padding:15px; 
+    border-radius:8px; 
+    margin-bottom:20px; 
+}
+.links-list a {
+    color:#0000cc;
+    text-decoration:none;
+}
+.links-list a:hover {
+    text-decoration:underline;
+}
+.suggestion-item { 
+    padding:8px; 
+    border-bottom:1px solid #ddd; 
+    cursor:pointer; 
+}
+.suggestion-item:hover { 
+    background:#f3eaea; 
+}
+#addressSuggestions { 
+    border:1px solid #ccc; 
+    margin-top:5px; 
+    display:none; 
+    border-radius:6px;
+    background:white;
+}
+footer {
+    margin-top:40px;
+    border-top:1px solid #ddd;
+    padding-top:10px;
+    color:#777;
+    font-size:14px;
+}
+</style>
 </head>
+
 <body>
-  <div class="container">
-    <h1>Internetverbinding wegwijzer</h1>
-    <div class="subtitle">Dataverbinding Frankrijk</div>
 
-    <div class="intro-box">
-      <p>
-        Zoek uw Franse adres in de officiële database (BAN). Wij tonen u direct welke technologieën (Fibre, 4G, Satelliet) in uw regio gebruikelijk zijn.
-      </p>
-      <div class="info-blue-box">
-        <strong>ℹ️ Hoe werkt het?</strong><br>
-        Deze tool vindt uw exacte officiële adres. Dit adres heeft u nodig bij de providers. Klik op de knoppen hieronder om definitief te checken of advies over hardware te lezen.
-      </div>
-    </div>
+<h1>Internetverbinding</h1>
+<h3 style="color:#777;">Dataverbinding Frankrijk</h3>
 
-    <div class="search-container">
-      <label for="addressInput">Zoek adres in Frankrijk</label>
-      <form onsubmit="event.preventDefault(); fetchAddresses();">
-        <div class="input-group">
-          <input id="addressInput" type="text" placeholder="Bijv. 5 route du Village..." autocomplete="off">
-          <button type="submit" class="search-btn">Zoek Adres</button>
-        </div>
-        <div id="addressSuggestions"></div>
-      </form>
-      <div class="helper-text">
-        Typ een straat en plaats en druk op Enter (of klik op 'Zoek Adres').
-      </div>
-    </div>
+<p>Vul een adres in. Wij halen realtime gegevens op via ARCEP en de Franse adres-database (BAN).</p>
 
-    <div id="results">
-      <h2>Mogelijkheden voor uw locatie</h2>
-      
-      <div class="address-summary">
-        <strong>Geselecteerd adres:</strong> <span id="normalizedAddress"></span><br>
-        <span style="font-size:13px; color:#666;">GPS Coördinaten: <span id="gpsCoords"></span></span>
-      </div>
+<input id="addressInput" 
+       onkeyup="fetchAddresses()"
+       placeholder="Bijv. 5 route du Village, 32100 Condom"
+       style="width:100%;padding:12px;font-size:16px;">
 
-      <div class="tech-grid" id="techCards">
-        </div>
+<div id="addressSuggestions"></div>
 
-      <div class="savings-box">
-        <h3>💡 Slimme tips &amp; Subsidie (Factcheck)</h3>
-        <ul>
-          <li>
-            <strong>Besparen op TV:</strong> Kunt u stabiel internet krijgen (via glasvezel of Starlink)? Overweeg dan uw dure schotel-TV abonnement op te zeggen en kijk Nederlandse TV via apps (o.a. NLZIET). Dit is vaak goedkoper.
-          </li>
-          <li>
-            <strong>Slecht mobiel bereik binnenshuis?</strong> Bijna alle Franse providers ondersteunen "Bellen via WiFi" (VoWiFi). Activeer dit op uw telefoon om via uw internetverbinding kraakhelder te bellen, zelfs zonder 4G-mast in de buurt.
-          </li>
-          <li>
-            <strong>Subsidie checken:</strong> Woont u in een gebied waar géén snel vast internet (>30 Mbps) mogelijk is? De Franse staat vergoedt vaak tot €150 (of meer) op de <em>aanschafkosten</em> van hardware voor satelliet of 4G via de regeling <em>"Cohésion Numérique des Territoires"</em>.
-          </li>
-          <li>
-            <strong>Let op bij lange opritten:</strong> Glasvezel aanleggen over privéterrein (graafwerk of palen) is vaak voor eigen rekening. Dit kan bij lange afstanden kostbaar zijn.
-          </li>
-        </ul>
-      </div>
+<div id="results" style="display:none;margin-top:30px;">
 
-      <div class="tips-box">
-        <h3>Wat is belangrijk &amp; Prijsindicatie</h3>
-        <ul>
-          <li>
-            <strong>Glasvezel (Fibre):</strong> De beste keuze. Snel en stabiel.<br>
-            <em>Prijsindicatie: €25 – €50 per maand.</em>
-          </li>
-          <li>
-            <strong>4G/5G Box:</strong> Goed alternatief als er geen Fibre is.<br>
-            <em>Prijsindicatie: €30 – €45 per maand.</em>
-          </li>
-          <li>
-            <strong>Starlink (LEO):</strong> Lage vertraging (latency), dus beter voor videobellen dan klassieke satelliet.<br>
-            <em>Prijsindicatie: €40 – €50 per maand + hardware (~€250-450).</em>
-          </li>
-          <li>
-            <strong>Klassieke Satelliet (Nordnet e.a.):</strong> Let op: hogere vertraging (latency), minder geschikt voor videobellen/gamen.<br>
-            <em>Prijsindicatie: €30 – €70 per maand.</em>
-          </li>
-        </ul>
-      </div>
+  <h3>Geselecteerd adres</h3>
+  <p>
+    <strong>Adres:</strong> <span id="normalizedAddress"></span><br>
+    <strong>GPS:</strong> <span id="gpsCoords"></span>
+  </p>
 
-      <div class="forum-box">
-        <strong>Praat mee op het forum:</strong><br>
-        Twijfelt u? Lees de ervaringen van anderen. Bekijk de laatste berichten over dit onderwerp op Nederlanders.fr:<br>
-        👉 <a href="https://www.nederlanders.fr/profiles/blog/list?tag=Telecommunicatie" target="_blank">Nieuwste berichten over Telecommunicatie</a>
-      </div>
+  <div id="arcepBlock" style="margin:20px 0;"></div>
 
-      <div class="section">
-        <h3>Volgende stappen: Check &amp; Advies</h3>
-        <p>Gebruik uw gevonden adresgegevens voor de officiële check of lees ons advies over routers en wifi:</p>
-        
-        <div class="action-buttons-container">
-          <a href="https://maconnexioninternet.arcep.fr/" target="_blank" class="btn-maroon">
-            Officiële Check (Arcep) &rarr;
-          </a>
-          
-          <a href="https://infofrankrijk.tempurl.host/2025/11/24/hardware-adviezen-voor-een-optimale-internetverbinding/" target="_blank" class="btn-maroon">
-            Hardware &amp; Tips Advies &rarr;
-          </a>
-        </div>
-        
-        <p style="font-size:13px; margin-top:8px; color:#666;">
-          De Arcep-kaart is de enige 100% onafhankelijke bron voor technische beschikbaarheid per huisnummer.
-        </p>
-      </div>
+  <h3>Internetopties</h3>
+  <div id="techCards"></div>
 
-      <div class="section">
-        <h3>TV & VPN Diensten</h3>
-        <ul id="tvList"></ul>
-        <ul id="vpnList"></ul>
-      </div>
-    </div>
+  <h3>TV</h3>
+  <ul id="tvList"></ul>
 
-    <footer>
-      <p>
-        Infofrankrijk.com en Nederlanders.fr. Data via api-adresse.data.gouv.fr.<br>
-        <strong>Disclaimer:</strong> Wij hebben geen affiliate marketing relatie met de genoemde bedrijven. Deze tool is puur informatief bedoeld.
-      </p>
-    </footer>
-  </div>
+  <h3>VPN</h3>
+  <ul id="vpnList"></ul>
 
-  <script>
-    let providersData = null;
+</div>
 
-    // 1. Providers laden
-    async function loadProviders() {
-      try {
-        const res = await fetch("providers_fr.json");
-        if (res.ok) providersData = await res.json();
-      } catch (e) {
-        console.error("Fout laden JSON:", e);
-      }
-    }
+<footer>
+  Infofrankrijk.com en Nederlanders.fr.
+</footer>
 
-    // 2. Adressen ophalen bij BAN (API)
-    async function fetchAddresses() {
-      const input = document.getElementById("addressInput");
-      const suggestionsBox = document.getElementById("addressSuggestions");
-      const query = input.value.trim();
-
-      if (query.length < 3) return;
-
-      suggestionsBox.style.display = "none";
-      suggestionsBox.innerHTML = "<div class='suggestion-item'>Zoeken...</div>";
-      suggestionsBox.style.display = "block";
-
-      try {
-        const url = "https://api-adresse.data.gouv.fr/search/?q=" + encodeURIComponent(query) + "&limit=5";
-        const res = await fetch(url);
-        if (res.ok) {
-          const data = await res.json();
-          renderSuggestions(data.features);
-        } else {
-          suggestionsBox.innerHTML = "<div class='suggestion-item'>Fout bij ophalen adressen.</div>";
-        }
-      } catch (e) {
-        console.error(e);
-        suggestionsBox.innerHTML = "<div class='suggestion-item'>Geen verbinding met API.</div>";
-      }
-    }
-
-    // 3. Suggesties tonen
-    function renderSuggestions(features) {
-      const suggestionsBox = document.getElementById("addressSuggestions");
-      suggestionsBox.innerHTML = "";
-
-      if (!features || features.length === 0) {
-        suggestionsBox.innerHTML = "<div class='suggestion-item'>Geen adres gevonden. Probeer postcode + plaats.</div>";
-        suggestionsBox.style.display = "block";
-        return;
-      }
-
-      features.forEach(f => {
-        const div = document.createElement("div");
-        div.className = "suggestion-item";
-        const label = f.properties.label;
-        const context = f.properties.context || ""; 
-        
-        div.innerHTML = `<strong>${label}</strong><span class="suggestion-context">${context}</span>`;
-        div.onclick = () => selectAddress(f);
-        suggestionsBox.appendChild(div);
-      });
-
-      suggestionsBox.style.display = "block";
-    }
-
-    // 4. Adres geselecteerd
-    function selectAddress(feature) {
-      document.getElementById("addressSuggestions").style.display = "none";
-      document.getElementById("addressInput").value = feature.properties.label;
-      document.getElementById("results").style.display = "block";
-      document.getElementById("normalizedAddress").textContent = feature.properties.label;
-      
-      const coords = feature.geometry.coordinates; 
-      document.getElementById("gpsCoords").textContent = coords[1] + ", " + coords[0];
-
-      renderResults();
-    }
-
-    // 5. Render Kaarten
-    function renderResults() {
-      const container = document.getElementById("techCards");
-      const internet = providersData && providersData.internet ? providersData.internet : {};
-      
-      const listLinks = (arr) => {
-        if(!arr) return "";
-        return arr.map(p => `<a href="${p.url}" target="_blank">${p.name}</a>`).join("<br>");
-      };
-
-      container.innerHTML = `
-        <div class="tech-card">
-          <span class="pill">Fibre</span>
-          <h3>Glasvezel</h3>
-          <p>Check beschikbaarheid bij:</p>
-          <div class="links-list">${listLinks(internet.fibre)}</div>
-        </div>
-        <div class="tech-card">
-          <span class="pill">4G/5G</span>
-          <h3>4G/5G Box</h3>
-          <p>Check dekking bij:</p>
-          <div class="links-list">${listLinks(internet["4g5g"])}</div>
-        </div>
-        <div class="tech-card">
-          <span class="pill">Starlink</span>
-          <h3>Satelliet (LEO)</h3>
-          <div class="links-list">${listLinks(internet.leo)}</div>
-        </div>
-      `;
-
-      const tvList = document.getElementById("tvList");
-      const vpnList = document.getElementById("vpnList");
-      
-      if(providersData && providersData.tv) {
-         let tvHtml = "";
-         providersData.tv.nl.forEach(t => tvHtml += `<li>${t.name} (<a href="${t.url}" target="_blank">link</a>)</li>`);
-         tvList.innerHTML = tvHtml;
-      }
-      
-      if(providersData && providersData.vpn) {
-         let vpnHtml = "";
-         providersData.vpn.forEach(v => vpnHtml += `<li>${v.name} - ${v.type} (<a href="${v.url}" target="_blank">site</a>)</li>`);
-         vpnList.innerHTML = vpnHtml;
-      }
-    }
-
-    document.addEventListener("DOMContentLoaded", loadProviders);
-    
-    document.addEventListener('click', function(e) {
-      const container = document.querySelector('.search-container');
-      if (!container.contains(e.target)) {
-        document.getElementById("addressSuggestions").style.display = 'none';
-      }
-    });
-  </script>
+<script src="script.js"></script>
 </body>
 </html>
