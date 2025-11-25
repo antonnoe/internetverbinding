@@ -71,6 +71,7 @@ function renderSuggestions(features) {
 // ------------------------------------------------------------
 async function selectAddress(feature) {
   document.getElementById("addressSuggestions").style.display = "none";
+
   const label = feature.properties.label;
   const coords = feature.geometry.coordinates;
 
@@ -92,7 +93,11 @@ async function fetchArcepData(address) {
   out.innerHTML = "Bezig met controleren…";
 
   try {
-    const url = `/api/arcep?address=${encodeURIComponent(address)}`;
+    // >>>>>>>  ABSOLUTE VERCEL URL — BELANGRIJK  <<<<<<<
+    const url =
+      "https://internetverbinding.vercel.app/api/arcep?address=" +
+      encodeURIComponent(address);
+
     const res = await fetch(url);
     const data = await res.json();
 
@@ -102,6 +107,12 @@ async function fetchArcepData(address) {
       renderResults(null);
       return;
     }
+
+    out.innerHTML = `
+      <p><strong>ARCEP-resultaten</strong></p>
+      <p>Glasvezel: ${data.fibre ? "Ja" : "Nee"}</p>
+      <p>DSL: ${data.dsl ? "Ja" : "Nee"}</p>
+    `;
 
     renderResults(data);
   } catch (e) {
@@ -168,7 +179,10 @@ function renderResults(arcep) {
   // TV
   const tv = providersData?.tv?.nl || [];
   document.getElementById("tvList").innerHTML = tv
-    .map((t) => `<li>${t.name} (<a href="${t.url}" target="_blank">link</a>)</li>`)
+    .map(
+      (t) =>
+        `<li>${t.name} (<a href="${t.url}" target="_blank">link</a>)</li>`
+    )
     .join("");
 
   // VPN
