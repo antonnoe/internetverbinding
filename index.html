@@ -1,88 +1,40 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Internetverbinding – Dataverbinding Frankrijk</title>
 
 <style>
-body { 
-    font-family: Arial, sans-serif; 
-    margin:0; 
-    padding:20px; 
-    background:white; 
-    color:#000; 
-}
+body { font-family: Arial; padding:20px; background:white; color:#000; }
 h1 { color:#800000; margin-bottom:5px; }
-h3 { color:#800000; margin-top:30px; }
-.pill { 
-    background:#800000; 
-    color:white; 
-    padding:4px 8px; 
-    border-radius:20px; 
-    font-size:12px; 
-}
-.tech-card { 
-    border:1px solid #ccc; 
-    padding:15px; 
-    border-radius:8px; 
-    margin-bottom:20px; 
-}
-.links-list a {
-    color:#0000cc;
-    text-decoration:none;
-}
-.links-list a:hover {
-    text-decoration:underline;
-}
-.suggestion-item { 
-    padding:8px; 
-    border-bottom:1px solid #ddd; 
-    cursor:pointer; 
-}
-.suggestion-item:hover { 
-    background:#f3eaea; 
-}
-#addressSuggestions { 
-    border:1px solid #ccc; 
-    margin-top:5px; 
-    display:none; 
-    border-radius:6px;
-    background:white;
-}
-footer {
-    margin-top:40px;
-    border-top:1px solid #ddd;
-    padding-top:10px;
-    color:#777;
-    font-size:14px;
-}
+h3 { color:#800000; }
+.pill { background:#800000; color:white; padding:4px 8px; border-radius:20px; font-size:11px; }
+.tech-card { border:1px solid #ccc; padding:15px; border-radius:8px; margin-bottom:20px; }
+.suggestion-item { padding:8px; border-bottom:1px solid #ddd; cursor:pointer; }
+.suggestion-item:hover { background:#f3eaea; }
+#addressSuggestions { border:1px solid #ccc; margin-top:5px; border-radius:6px; display:none; background:white; }
 </style>
 </head>
 
 <body>
-
 <h1>Internetverbinding</h1>
 <h3 style="color:#777;">Dataverbinding Frankrijk</h3>
 
-<p>Vul een adres in. Wij halen realtime gegevens op via ARCEP en de Franse adres-database (BAN).</p>
+<p>Vul een adres in. Wij halen realtime gegevens op via ARCEP en BAN.</p>
 
-<input id="addressInput" 
-       onkeyup="fetchAddresses()"
-       placeholder="Bijv. 5 route du Village, 32100 Condom"
-       style="width:100%;padding:12px;font-size:16px;">
+<input id="addressInput" onkeyup="fetchAddresses()" placeholder="Bijv. 5 route du Village, 32100 Condom" style="width:100%;padding:12px;font-size:16px;" />
 
 <div id="addressSuggestions"></div>
 
 <div id="results" style="display:none;margin-top:30px;">
-
   <h3>Geselecteerd adres</h3>
   <p>
-    <strong>Adres:</strong> <span id="normalizedAddress"></span><br>
+    <strong>Adres:</strong> <span id="normalizedAddress"></span><br />
     <strong>GPS:</strong> <span id="gpsCoords"></span>
   </p>
 
-  <div id="arcepBlock" style="margin:20px 0;"></div>
+  <div id="arcepBlock" style="margin:20px 0;">Bezig…</div>
 
   <h3>Internetopties</h3>
   <div id="techCards"></div>
@@ -92,12 +44,7 @@ footer {
 
   <h3>VPN</h3>
   <ul id="vpnList"></ul>
-
 </div>
-
-<footer>
-  Infofrankrijk.com en Nederlanders.fr.
-</footer>
 
 <script src="script.js"></script>
 </body>
