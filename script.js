@@ -6,12 +6,12 @@ async function loadProviders() {
   try {
     const res = await fetch("providers_fr.json");
     if (res.ok) providersData = await res.json();
-  } catch (e) { console.error(e); }
+  } catch (e) { console.error("Fout laden providers:", e); }
 }
 loadProviders();
 
 // ------------------------------------------------------------
-// 2. BAN & UI LOGIC
+// 2. BAN AUTOCOMPLETE (Frontend)
 // ------------------------------------------------------------
 async function fetchAddresses() {
   const input = document.getElementById("addressInput");
@@ -49,55 +49,60 @@ async function selectAddress(feature) {
   document.getElementById("addressSuggestions").style.display = "none";
   const label = feature.properties.label;
   const coords = feature.geometry.coordinates;
+  
+  // UI vullen met frontend data
   document.getElementById("addressInput").value = label;
   document.getElementById("normalizedAddress").textContent = label;
   document.getElementById("gpsCoords").textContent = `${coords[1]}, ${coords[0]}`;
   document.getElementById("results").style.display = "block";
+  
+  // Backend aanroepen
   await fetchArcepData(label);
 }
 
 // ------------------------------------------------------------
-// 3. BACKEND FETCH (DE KRITISCHE STAP)
+// 3. BACKEND FETCH (De kritieke stap)
 // ------------------------------------------------------------
 async function fetchArcepData(address) {
   const out = document.getElementById("arcepBlock");
   out.innerHTML = "Bezig met controleren...";
 
   try {
-    // Relatief pad
-    const res = await fetch(`/api/arcep?address=${encodeURIComponent(address)}`);
+    // We roepen de backend aan
+    const response = await fetch(`/api/arcep?address=${encodeURIComponent(address)}`);
     
-    // LEES EERST ALS TEKST OM HTML FOUTEN TE ZIEN
-    const text = await res.text();
+    // Eerst kijken we of het antwoord HTML is (Fout) of JSON (Goed)
+    const contentType = response.headers.get("content-type");
     
-    let data;
-    try {
-        data = JSON.parse(text);
-    } catch (e) {
-        // Als dit faalt, hebben we HTML ontvangen (een crash pagina)
-        console.error("Server Crash Response:", text);
-        throw new Error("De server gaf een ongeldig antwoord (HTML). Zie console.");
+    if (contentType && contentType.includes("text/html")) {
+        throw new Error("Routing Fout: De server gaf de homepage terug in plaats van de API. Controleer vercel.json.");
     }
 
+    const data = await response.json();
+
     if (!data.ok) {
-      out.innerHTML = `<p style="color:red">Fout: ${data.error} <small>${data.details || ''}</small></p>`;
+      out.innerHTML = `<p style="color:red">API Melding: ${data.error} <small>${data.details || ''}</small></p>`;
       renderResults(null);
       return;
     }
 
     out.innerHTML = `
-      <p style="color:#006400"><strong>✔ Resultaten voor ${data.address_found}</strong></p>
+      <p style="color:#006400"><strong>✔ Resultaten opgehaald (INSEE: ${data.insee})</strong></p>
       <p>Glasvezel: ${data.fibre ? "Ja" : "Nee"}</p>
       <p>DSL: ${data.dsl ? "Ja" : "Nee"}</p>
     `;
     renderResults(data);
 
   } catch (e) {
-    out.innerHTML = `<p style="color:red">Technische fout: ${e.message}</p>`;
+    console.error(e);
+    out.innerHTML = `<p style="color:red; font-weight:bold">Systeem Fout: ${e.message}</p>`;
     renderResults(null);
   }
 }
 
+// ------------------------------------------------------------
+// 4. RENDER RESULTATEN
+// ------------------------------------------------------------
 function renderResults(arcep) {
   const container = document.getElementById("techCards");
   const internet = providersData?.internet || {};
@@ -118,7 +123,6 @@ function renderResults(arcep) {
     <div class="tech-card"><h3>Starlink</h3><div class="links-list">${listLinks(internet.leo)}</div></div>
   `;
   
-  // TV & VPN
   const tv = providersData?.tv?.nl || [];
   document.getElementById("tvList").innerHTML = tv.map(t => `<li>${t.name} (<a href="${t.url}" target="_blank">link</a>)</li>`).join("");
   const vpn = providersData?.vpn || [];
