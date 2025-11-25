@@ -23,21 +23,19 @@ export default async function handler(req, res) {
     const f = banData.features[0];
     const label = f.properties.label;
     const [lon, lat] = f.geometry.coordinates;
-    const insee = f.properties.citycode; // We bewaren deze alleen voor de log
+    const insee = f.properties.citycode; 
 
     // ---------------------------------------------------------
-    // STAP 2: ARCEP Data Ophalen (VIA GPS RADIUS)
+    // STAP 2: ARCEP Data Ophalen (GPS RADIUS 1000m)
     // ---------------------------------------------------------
-    // We zoeken binnen 200 meter van het punt. Dit negeert foute gemeentecodes.
     const baseUrl = "https://data.arcep.fr/api/explore/v2.1/catalog/datasets";
     
-    // Syntax: within_distance(geo_veld, geom'POINT(lon lat)', afstand)
-    // We gebruiken 'geopoint' als standaard veldnaam voor ODS
+    // We vergroten de radius naar 1000m voor landelijke gebieden
     const geoQuery = `within_distance(geopoint, geom'POINT(${lon} ${lat})', 1000m)`;
     const whereClause = encodeURIComponent(geoQuery);
     
-    const fixedUrl = `${baseUrl}/maconnexioninternet/records?where=${whereClause}&limit=50`;
-    const mobileUrl = `${baseUrl}/monreseaumobile/records?where=${whereClause}&limit=50`;
+    const fixedUrl = `${baseUrl}/maconnexioninternet/records?where=${whereClause}&limit=100`;
+    const mobileUrl = `${baseUrl}/monreseaumobile/records?where=${whereClause}&limit=100`;
 
     const [fixedRes, mobileRes] = await Promise.all([
         fetch(fixedUrl),
@@ -48,30 +46,33 @@ export default async function handler(req, res) {
     let mobileData = { results: [] };
 
     if (fixedRes.ok) fixedData = await fixedRes.json();
-    else console.error("Fixed API Error", fixedRes.status);
-
     if (mobileRes.ok) mobileData = await mobileRes.json();
-    else console.error("Mobile API Error", mobileRes.status);
 
     // ---------------------------------------------------------
-    // STAP 3: Data Verwerken
+    // STAP 3: Data Verwerken (SOEPELE LOGICA)
     // ---------------------------------------------------------
     let hasFibre = false;
     let hasDsl = false;
     let mobile = { orange: null, sfr: null, bouygues: null, free: null };
 
-    // VAST: Zoek de beste match in de buurt
+    // VAST: We kijken puur naar de technologie. Als FttH in de lijst staat, is het er.
     if (fixedData.results && fixedData.results.length > 0) {
-        // 1. Is er Fibre?
-        const fibreRec = fixedData.results.find(r => r.techno === 'FttH' && (r.elig === true || r.elig === '1'));
+        // 1. Is er Fibre? (Check op 'ftth' in de techno kolom)
+        const fibreRec = fixedData.results.find(r => {
+            const tech = (r.techno || '').toLowerCase();
+            return tech.includes('ftth');
+        });
         if (fibreRec) hasFibre = true;
 
         // 2. Is er DSL?
-        const dslRec = fixedData.results.find(r => (r.techno === 'ADSL' || r.techno === 'VDSL2'));
+        const dslRec = fixedData.results.find(r => {
+            const tech = (r.techno || '').toLowerCase();
+            return tech.includes('adsl') || tech.includes('vdsl');
+        });
         if (dslRec) hasDsl = true;
     }
 
-    // MOBIEL: Pak de beste dekking in de buurt
+    // MOBIEL:
     if (mobileData.results && mobileData.results.length > 0) {
         mobileData.results.forEach(r => {
             const op = (r.nom_operateur || r.operateur || '').toLowerCase();
@@ -86,14 +87,13 @@ export default async function handler(req, res) {
             else if (heeft4G) status = "4G";
 
             if (op && status) {
-                // Upgrade status als we een betere vinden in de straal van 200m
                 if (!mobile[op] || mobile[op] === "Beschikbaar" || (status === "5G/4G" && mobile[op] === "4G")) {
                     mobile[op] = status;
                 }
             }
         });
         
-        // Fallback voor als we wel operator zien maar geen specifieke 'couverture' velden
+        // Fallback
         mobileData.results.forEach(r => {
              const op = (r.nom_operateur || r.operateur || '').toLowerCase();
              if (op && !mobile[op]) mobile[op] = "Beschikbaar"; 
@@ -104,8 +104,8 @@ export default async function handler(req, res) {
       ok: true,
       address_found: label,
       gps: { lat, lon },
-      insee: insee, // Ter info
-      search_method: "gps_radius_200m",
+      insee: insee,
+      radius: "1000m",
       fibre: hasFibre,
       dsl: hasDsl,
       mobile: mobile
