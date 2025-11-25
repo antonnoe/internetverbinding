@@ -6,7 +6,7 @@
 <title>Internetverbinding – Dataverbinding Frankrijk</title>
 <style>
     /* --- BASIS OPMAAK --- */
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f4f4f9; color: #333; max-width: 800px; margin: 0 auto; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f4f4f9; color: #333; max-width: 800px; margin: 0 auto; padding-bottom: 160px; }
     h1 { color: #800000; margin-bottom: 5px; }
     h3 { color: #666; margin-top: 0; font-weight: normal; font-size: 1.1em; }
     
@@ -25,31 +25,54 @@
     #results { display: none; margin-top: 30px; animation: fadeIn 0.5s; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* --- INSTRUCTIE BLOK (Blauw) --- */
-    .instruction-box { background: #f0f7ff; border: 1px solid #cce5ff; padding: 25px; border-radius: 8px; text-align: center; }
-    
-    /* KNOPPEN GROEP */
-    .btn-map { display: inline-block; background: #800000; color: white; padding: 14px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 18px; margin: 20px 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.1s; }
-    .btn-map:hover { background: #600000; transform: scale(1.02); }
-
-    .choice-container { margin-top: 20px; padding-top: 20px; border-top: 1px solid #dae0e5; }
-    .choice-buttons { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
-    
-    .btn-choice { padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 15px; border: 2px solid; background: white; transition: all 0.2s; }
-    .btn-choice:hover { transform: translateY(-2px); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-
-    .btn-green { border-color: #28a745; color: #28a745; }
-    .btn-green:hover { background: #28a745; color: white; }
-    .btn-yellow { border-color: #d39e00; color: #d39e00; }
-    .btn-yellow:hover { background: #ffc107; color: black; }
-    .btn-gray { border-color: #6c757d; color: #6c757d; }
-    .btn-gray:hover { background: #6c757d; color: white; }
+    /* --- KAART INSTRUCTIE --- */
+    .map-box { background: white; border-left: 5px solid #800000; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); text-align: center; }
+    .btn-map { display: inline-block; background: #800000; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; margin: 15px 0; transition: background 0.2s; }
+    .btn-map:hover { background: #600000; }
 
     /* --- ADVIES KAARTEN --- */
     .tech-card { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #eee; }
     .pill { display: inline-block; padding: 4px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; color: white; background: #800000; }
     .links-list a { display: block; color: #0056b3; text-decoration: none; padding: 5px 0; border-bottom: 1px dotted #eee; }
     .links-list a:hover { text-decoration: underline; color: #003d82; }
+
+    /* --- STICKY FOOTER (AFSTANDSBEDIENING) --- */
+    #stickyContainer { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 4px solid #800000; box-shadow: 0 -5px 20px rgba(0,0,0,0.15); padding: 15px 10px; text-align: center; z-index: 9999; }
+    .sticky-buttons { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+    
+    .sticky-btn { 
+        padding: 10px 14px; 
+        border-radius: 6px; 
+        cursor: pointer; 
+        font-weight: bold; 
+        font-size: 13px; 
+        border: 2px solid; 
+        background: white; 
+        transition: all 0.2s; 
+        min-width: 80px;
+    }
+    .sticky-btn:hover { transform: translateY(-2px); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    
+    /* KLEUREN UIT JOUW AFBEELDING EN INSTRUCTIE */
+    /* Fibre = Blauw/Paars */
+    .btn-fibre { border-color: #5b6cba; color: #5b6cba; }
+    .btn-fibre:hover { background: #5b6cba; color: white; }
+
+    /* DSL = Groen (volgens jouw instructie) */
+    .btn-dsl { border-color: #28a745; color: #28a745; }
+    .btn-dsl:hover { background: #28a745; color: white; }
+
+    /* 4G Fixe = Lichtblauw/Groen (Teal) */
+    .btn-4g { border-color: #4db6ac; color: #4db6ac; }
+    .btn-4g:hover { background: #4db6ac; color: white; }
+
+    /* Satelliet = Lichtblauw */
+    .btn-sat { border-color: #64b5f6; color: #64b5f6; }
+    .btn-sat:hover { background: #64b5f6; color: white; }
+
+    /* Geen = Grijs */
+    .btn-gray { border-color: #6c757d; color: #6c757d; }
+    .btn-gray:hover { background: #6c757d; color: white; }
 
     footer { margin-top: 50px; text-align: center; font-size: 12px; color: #999; border-top: 1px solid #eee; padding-top: 20px; }
 </style>
@@ -67,9 +90,19 @@
     </div>
 
     <div id="results">
-        <div id="arcepOutput"></div>
-        
+        <div id="mapInstruction"></div>
         <div id="finalAdvice"></div>
+    </div>
+
+    <div id="stickyContainer">
+        <div style="margin-bottom: 8px; font-weight: bold; color: #555;">Welke kleur bolletje staat er op uw huis?</div>
+        <div class="sticky-buttons">
+            <button class="sticky-btn btn-fibre" onclick="showResult('fibre')">🔵 Fibre</button>
+            <button class="sticky-btn btn-dsl" onclick="showResult('dsl')">🟢 DSL</button>
+            <button class="sticky-btn btn-4g" onclick="showResult('4g')">🌐 4G Fixe</button>
+            <button class="sticky-btn btn-sat" onclick="showResult('sat')">📡 Satelliet</button>
+            <button class="sticky-btn btn-gray" onclick="showResult('none')">⚪ Geen</button>
+        </div>
     </div>
 
     <footer>
@@ -77,7 +110,7 @@
     </footer>
 
     <script>
-        // --- 1. HARDE DATA ---
+        // --- HARDE DATA ---
         const providers = {
             fibre: [
                 { name: "Orange Fibre", url: "https://boutique.orange.fr/internet/offres-fibre" },
@@ -96,6 +129,9 @@
                 { name: "Orange 4G Home", url: "https://boutique.orange.fr/internet/offres-4g-home" },
                 { name: "Bouygues 4G Box", url: "https://www.bouyguestelecom.fr/offres-internet/4g-box" }
             ],
+            sat_classic: [
+                { name: "Nordnet", url: "https://www.nordnet.com/" }
+            ],
             tv: [
                 { name: "NLZIET (NL TV)", url: "https://www.nlziet.nl/" },
                 { name: "Canal Digitaal (NL TV)", url: "https://www.canaldigitaal.nl/" }
@@ -106,7 +142,7 @@
             ]
         };
 
-        // --- 2. ZOEKFUNCTIE ---
+        // --- ZOEKFUNCTIE ---
         const input = document.getElementById('addressInput');
         const suggestions = document.getElementById('addressSuggestions');
         let debounce;
@@ -137,7 +173,7 @@
             }, 300);
         });
 
-        // --- 3. SELECTIE -> TOON ALLES ---
+        // --- SELECTIE ---
         function selectAddress(feature) {
             suggestions.style.display = 'none';
             input.value = feature.properties.label;
@@ -146,82 +182,105 @@
             // UI Reset
             document.getElementById('results').style.display = 'block';
             document.getElementById('finalAdvice').innerHTML = '';
+            document.getElementById('stickyContainer').style.display = 'block';
 
-            // Link naar kaart (Zoom 20)
+            // Link naar officiële kaart
             const arcepUrl = `https://maconnexioninternet.arcep.fr/?lat=${lat}&lng=${lon}&zoom=20&mode=debit&techno=filaire`;
             
-            // Render de hele box: Instructie -> Knop -> Vragen
-            document.getElementById('arcepOutput').innerHTML = `
-                <div class="instruction-box">
-                    <h3 style="margin-top:0; color:#004085;">Stap 1: Controle</h3>
-                    <p>Klik op de rode knop. De officiële kaart opent in een nieuw venster op uw dak.</p>
-                    
+            document.getElementById('mapInstruction').innerHTML = `
+                <div class="map-box">
+                    <h3 style="color:#800000; margin-top:0;">Stap 1: Controleer uw huis</h3>
+                    <p>Kijk op de kaart welk gekleurd bolletje er op uw dak staat.</p>
                     <a href="${arcepUrl}" target="_blank" class="btn-map">📍 Open Kaart</a>
-                    
-                    <div class="choice-container">
-                        <p style="font-weight:bold; margin-bottom:10px;">Stap 2: Wat zag u op de kaart?</p>
-                        <div class="choice-buttons">
-                            <button class="btn-choice btn-green" onclick="showResult('fibre')">🟢 Groen (Glasvezel)</button>
-                            <button class="btn-choice btn-yellow" onclick="showResult('dsl')">🟡 Geel (Koper)</button>
-                            <button class="btn-choice btn-gray" onclick="showResult('none')">⚪ Grijs / Niets</button>
-                        </div>
-                    </div>
+                    <p style="font-size:0.9em; color:#666;">(Keer daarna terug naar dit scherm)</p>
                 </div>
             `;
+            
+            document.getElementById('mapInstruction').scrollIntoView({ behavior: 'smooth' });
         }
 
-        // --- 4. RESULTAAT TONEN ---
+        // --- RESULTAAT TONEN ---
         window.showResult = function(type) {
+            document.getElementById('stickyContainer').style.display = 'none'; // Verberg balk
             const container = document.getElementById('finalAdvice');
+            
             const makeLinks = (list) => list.map(i => `<a href="${i.url}" target="_blank">${i.name} &rarr;</a>`).join('');
             let html = '';
 
-            // KEUZES LOGICA
+            // LOGICA PER KLEUR
             if (type === 'fibre') {
+                // BLAUW/PAARS
                 html += `
-                    <div style="background:#d4edda; color:#155724; padding:15px; border-radius:8px; margin:20px 0; border:1px solid #c3e6cb;">
-                        <strong>✅ Fantastisch!</strong> U heeft Glasvezel.
+                    <div style="background:#e8eaf6; color:#283593; padding:15px; border-radius:8px; margin:20px 0; border:1px solid #c5cae9;">
+                        <strong>✅ Gefeliciteerd!</strong> U heeft Glasvezel (FttH).
                     </div>
                     <div class="tech-card">
                         <span class="pill">Beste Keuze</span>
                         <h3>Glasvezel (Fibre)</h3>
-                        <p>Tot 1 Gbit/s of sneller. Stabiel en toekomstbestendig.</p>
+                        <p>Maximale snelheid (1 Gbit/s+). Stabiel en toekomstbestendig.</p>
                         <div class="links-list">${makeLinks(providers.fibre)}</div>
-                    </div>
-                `;
+                    </div>`;
             } else if (type === 'dsl') {
+                // GROEN (Koper volgens jouw verzoek)
                 html += `
-                    <div style="background:#fff3cd; color:#856404; padding:15px; border-radius:8px; margin:20px 0; border:1px solid #ffeeba;">
-                        <strong>⚠️ Let op:</strong> U heeft waarschijnlijk ADSL (koper).
+                    <div style="background:#e8f5e9; color:#1b5e20; padding:15px; border-radius:8px; margin:20px 0; border:1px solid #c8e6c9;">
+                        <strong>⚠️ Let op:</strong> U heeft waarschijnlijk een koperlijn (ADSL).
                     </div>
                     <div class="tech-card">
                         <span class="pill">Standaard</span>
                         <h3>ADSL/VDSL</h3>
-                        <p>Via de telefoonlijn.</p>
+                        <p>Via de telefoonlijn. Snelheid afhankelijk van afstand.</p>
                         <div class="links-list">${makeLinks(providers.dsl)}</div>
                     </div>
                     <div class="tech-card">
-                        <span class="pill">Sneller Alternatief</span>
+                        <span class="pill">Alternatief</span>
                         <h3>Starlink</h3>
                         <div class="links-list">${makeLinks(providers.starlink)}</div>
-                    </div>
-                `;
-            } else {
+                    </div>`;
+            } else if (type === '4g') {
+                // 4G FIXE (Teal)
                 html += `
-                    <div style="background:#f8d7da; color:#721c24; padding:15px; border-radius:8px; margin:20px 0; border:1px solid #f5c6cb;">
-                        <strong>❌ Buitengebied:</strong> Geen vaste lijn zichtbaar.
+                    <div style="background:#e0f2f1; color:#004d40; padding:15px; border-radius:8px; margin:20px 0; border:1px solid #b2dfdb;">
+                        <strong>📡 4G Dekking:</strong> Er is een 4G antenne beschikbaar voor thuisgebruik.
                     </div>
                     <div class="tech-card">
-                        <span class="pill" style="background:#006400;">Aanbevolen</span>
-                        <h3>Starlink (Satelliet)</h3>
-                        <div class="links-list">${makeLinks(providers.starlink)}</div>
-                    </div>
-                    <div class="tech-card">
-                        <span class="pill">Alternatief</span>
+                        <span class="pill">Optie A</span>
                         <h3>4G Box</h3>
                         <div class="links-list">${makeLinks(providers.box4g)}</div>
                     </div>
-                `;
+                    <div class="tech-card">
+                        <span class="pill">Optie B (Sneller)</span>
+                        <h3>Starlink</h3>
+                        <div class="links-list">${makeLinks(providers.starlink)}</div>
+                    </div>`;
+            } else if (type === 'sat') {
+                // SATELLIET (Lichtblauw)
+                html += `
+                    <div style="background:#e3f2fd; color:#0d47a1; padding:15px; border-radius:8px; margin:20px 0; border:1px solid #bbdefb;">
+                        <strong>🛰️ Satelliet Gebied:</strong> Geen kabel, maar wel satelliet dekking.
+                    </div>
+                    <div class="tech-card">
+                        <span class="pill">Beste Keuze</span>
+                        <h3>Starlink (LEO)</h3>
+                        <p>Lage vertraging, hoge snelheid.</p>
+                        <div class="links-list">${makeLinks(providers.starlink)}</div>
+                    </div>
+                    <div class="tech-card">
+                        <h3>Nordnet (Klassiek)</h3>
+                        <div class="links-list">${makeLinks(providers.sat_classic)}</div>
+                    </div>`;
+            } else {
+                // GEEN (Grijs)
+                html += `
+                    <div style="background:#f8d7da; color:#721c24; padding:15px; border-radius:8px; margin:20px 0; border:1px solid #f5c6cb;">
+                        <strong>❌ Buitengebied:</strong> Geen vaste aansluiting zichtbaar.
+                    </div>
+                    <div class="tech-card">
+                        <span class="pill" style="background:#006400;">Aanbevolen</span>
+                        <h3>Starlink</h3>
+                        <p>Werkt overal, hoge snelheid.</p>
+                        <div class="links-list">${makeLinks(providers.starlink)}</div>
+                    </div>`;
             }
 
             // TV & VPN
