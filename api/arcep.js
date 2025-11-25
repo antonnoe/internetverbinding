@@ -1,8 +1,5 @@
 // api/arcep.js
-// Gebruikt standaard Node.js fetch (geen imports nodig in Node 18+)
-
 export default async function handler(req, res) {
-  // Zet headers voor veiligheid en toegang
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Content-Type', 'application/json');
 
@@ -13,11 +10,14 @@ export default async function handler(req, res) {
   }
 
   try {
-    // STAP 1: Adres naar Coördinaten & INSEE (via BAN API)
+    // 1. BAN: Adres -> INSEE
+    // We gebruiken encodeURIComponent voor veiligheid
     const banUrl = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(address)}&limit=1`;
     const banRes = await fetch(banUrl);
+    
+    if (!banRes.ok) throw new Error(`BAN API Fout: ${banRes.status}`);
+    
     const banData = await banRes.json();
-
     if (!banData.features || banData.features.length === 0) {
       return res.status(200).json({ ok: false, error: "Adres onbekend in BAN." });
     }
@@ -27,58 +27,66 @@ export default async function handler(req, res) {
     const label = feature.properties.label;
     const [lon, lat] = feature.geometry.coordinates;
 
-    // STAP 2: Haal Fibre/DSL data op (via ARCEP OpenData)
-    // We zoeken op INSEE code om zeker te zijn van data in de gemeente
-    const fixedUrl = `https://data.arcep.fr/api/explore/v2.1/catalog/datasets/maconnexioninternet/records?where=code_insee="${insee}"&limit=50`;
-    const fixedRes = await fetch(fixedUrl);
-    const fixedData = await fixedRes.json();
+    // 2. ARCEP: Data ophalen
+    // BELANGRIJK: De query parameter MOET encoded zijn voor Node.js fetch
+    const whereQuery = encodeURIComponent(`code_insee="${insee}"`);
+    
+    const fixedUrl = `https://data.arcep.fr/api/explore/v2.1/catalog/datasets/maconnexioninternet/records?where=${whereQuery}&limit=50`;
+    const mobileUrl = `https://data.arcep.fr/api/explore/v2.1/catalog/datasets/monreseaumobile/records?where=${whereQuery}&limit=50`;
 
-    // STAP 3: Haal Mobiele data op
-    const mobileUrl = `https://data.arcep.fr/api/explore/v2.1/catalog/datasets/monreseaumobile/records?where=code_insee="${insee}"&limit=50`;
-    const mobileRes = await fetch(mobileUrl);
+    // We voeren de requests parallel uit voor snelheid
+    const [fixedRes, mobileRes] = await Promise.all([
+        fetch(fixedUrl),
+        fetch(mobileUrl)
+    ]);
+
+    // Check op netwerkfouten
+    if (!fixedRes.ok) throw new Error(`ARCEP Fixed API Fout: ${fixedRes.status}`);
+    if (!mobileRes.ok) throw new Error(`ARCEP Mobile API Fout: ${mobileRes.status}`);
+
+    const fixedData = await fixedRes.json();
     const mobileData = await mobileRes.json();
 
-    // STAP 4: Analyseer de resultaten
+    // 3. Verwerking
     let hasFibre = false;
     let hasDsl = false;
     let mobile = { orange: null, sfr: null, bouygues: null, free: null };
 
-    // Check vast internet (Fibre/DSL)
-    if (fixedData.results && fixedData.results.length > 0) {
-      // Zoek of er IN DEZE GEMEENTE fibre beschikbaar is
-      const fibreRecord = fixedData.results.find(r => r.techno === 'FttH' && (r.elig === true || r.elig === '1'));
-      if (fibreRecord) hasFibre = true;
+    // Analyseer vast internet
+    if (fixedData.results) {
+        const fibreRec = fixedData.results.find(r => r.techno === 'FttH' && (r.elig === true || r.elig === '1'));
+        if (fibreRec) hasFibre = true;
 
-      const dslRecord = fixedData.results.find(r => (r.techno === 'ADSL' || r.techno === 'VDSL2'));
-      if (dslRecord) hasDsl = true;
+        const dslRec = fixedData.results.find(r => (r.techno === 'ADSL' || r.techno === 'VDSL2'));
+        if (dslRec) hasDsl = true;
     }
 
-    // Check mobiel
-    if (mobileData.results && mobileData.results.length > 0) {
-      mobileData.results.forEach(r => {
-        const op = (r.operateur || '').toLowerCase();
-        // Pak de beste dekking die we vinden in deze batch
-        if (op && !mobile[op]) {
-           mobile[op] = r.couverture_4g || r.couverture || "Beschikbaar";
-        }
-      });
+    // Analyseer mobiel
+    if (mobileData.results) {
+        mobileData.results.forEach(r => {
+            const op = (r.operateur || '').toLowerCase();
+            if (op && !mobile[op]) {
+                mobile[op] = r.couverture_4g || r.couverture || "Beschikbaar";
+            }
+        });
     }
 
-    // STAP 5: Stuur antwoord
     return res.status(200).json({
       ok: true,
       address_found: label,
       gps: { lat, lon },
+      insee: insee,
       fibre: hasFibre,
       dsl: hasDsl,
       mobile: mobile
     });
 
   } catch (error) {
-    console.error("API Fout:", error);
+    console.error("Backend Error:", error);
+    // We sturen de details mee zodat je ze in de browser ziet
     return res.status(500).json({ 
       ok: false, 
-      error: "Server fout bij ophalen data.",
+      error: "Server fout bij verwerken data.",
       details: error.message 
     });
   }
