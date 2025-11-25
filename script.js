@@ -63,7 +63,6 @@ async function fetchArcepData(address) {
     const data = await res.json();
 
     if (!data.ok) {
-      // Als API faalt, toon direct de officiële link
       renderFallbackLink();
       return;
     }
@@ -76,7 +75,6 @@ async function fetchArcepData(address) {
   }
 }
 
-// Als er niets gevonden is of error
 function renderFallbackLink() {
     document.getElementById("arcepOutput").innerHTML = `
         <div style="background:#f0f0f0; padding:15px; border-radius:8px; border:1px solid #ccc;">
@@ -93,11 +91,8 @@ function renderFallbackLink() {
 
 function renderArcepResult(data) {
   const container = document.getElementById("arcepOutput");
-  
   const operators = data.fibre_operators || [];
-  const hasDsl = data.dsl_available;
 
-  // HTML Bouwen
   let html = `<div style="margin-bottom:20px;">`;
 
   if (operators.length > 0) {
@@ -117,7 +112,6 @@ function renderArcepResult(data) {
       `;
   }
 
-  // Altijd de link naar ARCEP tonen voor zekerheid
   html += `
     <p style="font-size:0.9em; color:#666; margin-top:10px;">
         <em>Zeker weten voor uw exacte huisnummer?</em> <a href="https://maconnexioninternet.arcep.fr/" target="_blank" style="color:#800000;">Doe de officiële check op Arcep.fr</a>
@@ -132,12 +126,10 @@ function renderGeneralCards(data) {
     const internet = providersData?.internet || {};
     const listLinks = (arr) => arr ? arr.map(p => `<a href="${p.url}" target="_blank" style="display:block">${p.name}</a>`).join("") : "";
 
-    // Als we operators hebben gevonden, is het groen.
     const fibreFound = data.fibre_operators && data.fibre_operators.length > 0;
     const fibreText = fibreFound ? "<strong>Beschikbaar (zie lijst)</strong>" : "Niet gevonden";
     const fibreColor = fibreFound ? "green" : "black";
 
-    // Mobiel
     const m = data.mobile || {};
     const mobText = `O: ${m.orange||'-'} | S: ${m.sfr||'-'} | B: ${m.bouygues||'-'} | F: ${m.free||'-'}`;
 
