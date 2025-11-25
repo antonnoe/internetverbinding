@@ -1,4 +1,5 @@
 export default async function handler(req, res) {
+  // 1. CORS & Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Content-Type', 'application/json');
 
@@ -9,9 +10,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // ---------------------------------------------------------
-    // STAP 1: BAN Lookup (Adres -> Huisnummer & Straat)
-    // ---------------------------------------------------------
+    // 2. BAN LOOKUP (Adres -> GPS)
     const banUrl = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(address)}&limit=1`;
     const banRes = await fetch(banUrl);
     const banData = await banRes.json();
@@ -21,37 +20,24 @@ export default async function handler(req, res) {
     }
 
     const f = banData.features[0];
-    const props = f.properties;
-    
-    const lat = f.geometry.coordinates[1];
-    const lon = f.geometry.coordinates[0];
-    const insee = props.citycode;
-    const label = props.label;
-    
-    // We halen de specifieke straat en huisnummer op
-    const street = props.street || props.name; // 'Rue de Sehen'
-    const houseNum = props.housenumber;        // '22'
+    const label = f.properties.label;
+    const [lon, lat] = f.geometry.coordinates;
 
-    // ---------------------------------------------------------
-    // STAP 2: ARCEP Data Ophalen (Zoeken op Straatnaam)
-    // ---------------------------------------------------------
+    // 3. ARCEP LOOKUP (GPS RADIUS)
+    // We zoeken alles binnen 500 meter. Dit lost het probleem op van:
+    // - Verkeerde gemeentecodes (INSEE mismatch)
+    // - Lange opritten (huis staat ver van de weg)
+    // - Verschillende schrijfwijzen van straatnamen
+    
     const baseUrl = "https://data.arcep.fr/api/explore/v2.1/catalog/datasets";
     
-    // VAST INTERNET: We zoeken specifiek in de gemeente EN op straatnaam
-    // Dit is veel nauwkeuriger dan GPS radius
-    let fixedUrl = `${baseUrl}/maconnexioninternet/records?where=code_insee='${insee}'`;
+    // Radius query: 500 meter
+    const geoQuery = `within_distance(geopoint, geom'POINT(${lon} ${lat})', 500m)`;
+    const whereClause = encodeURIComponent(geoQuery);
     
-    // Als we een straatnaam hebben, voegen we een tekstzoekopdracht toe
-    if (street) {
-        // We gebruiken 'search' parameter voor full-text search op de straat
-        fixedUrl += `&search=${encodeURIComponent(street)}`;
-    }
-    fixedUrl += `&limit=100`; // Haal genoeg nummers op om de jouwe te vinden
-
-    // MOBIEL: Dekking is gebiedsgebonden, dus gemeente-niveau + GPS radius is prima
-    // We gebruiken hier een GPS radius van 500m om de masten in de buurt te vinden
-    const geoQuery = encodeURIComponent(`within_distance(geopoint, geom'POINT(${lon} ${lat})', 500m)`);
-    const mobileUrl = `${baseUrl}/monreseaumobile/records?where=${geoQuery}&limit=50`;
+    // We halen max 100 resultaten op in de buurt
+    const fixedUrl = `${baseUrl}/maconnexioninternet/records?where=${whereClause}&limit=100`;
+    const mobileUrl = `${baseUrl}/monreseaumobile/records?where=${whereClause}&limit=100`;
 
     const [fixedRes, mobileRes] = await Promise.all([
         fetch(fixedUrl),
@@ -64,81 +50,69 @@ export default async function handler(req, res) {
     if (fixedRes.ok) fixedData = await fixedRes.json();
     if (mobileRes.ok) mobileData = await mobileRes.json();
 
-    // ---------------------------------------------------------
-    // STAP 3: Data Verwerken (Huisnummer Match)
-    // ---------------------------------------------------------
+    // 4. DATA ANALYSE (Is er *iets* in de buurt?)
     let hasFibre = false;
     let hasDsl = false;
-    let matchType = "gemeente_fallback"; // Om te debuggen hoe goed de match was
+    let mobile = { orange: null, sfr: null, bouygues: null, free: null };
 
-    // --- VAST INTERNET ANALYSE ---
+    // VAST INTERNET
     if (fixedData.results && fixedData.results.length > 0) {
-        let relevantRecords = fixedData.results;
-        let exactMatchFound = false;
-
-        // Als we een huisnummer hebben, proberen we EXACT dat nummer te vinden
-        if (houseNum) {
-            const exactMatches = fixedData.results.filter(r => {
-                // ARCEP veld is vaak 'numero' of 'numero_voie'
-                return r.numero == houseNum || r.numero_voie == houseNum;
-            });
-
-            if (exactMatches.length > 0) {
-                relevantRecords = exactMatches;
-                matchType = "exact_huisnummer";
-                exactMatchFound = true;
-            } else {
-                matchType = "straat_gemiddelde";
-            }
-        }
-
-        // Check Fibre in de relevante records (Exact huis of hele straat)
-        const fibreRec = relevantRecords.find(r => {
+        // Check of er ERGENS in de straal van 500m glasvezel ligt
+        const fibreExists = fixedData.results.some(r => {
             const tech = (r.techno || '').toLowerCase();
-            // FttH aanwezig?
-            return tech.includes('ftth') && (r.elig === true || r.elig === '1' || r.elig === 1);
+            // We checken alleen op techniek, niet op 'activeerbaar', want dat is administratie
+            return tech.includes('ftth'); 
         });
         
-        if (fibreRec) hasFibre = true;
+        if (fibreExists) hasFibre = true;
 
-        // Check DSL
-        const dslRec = relevantRecords.find(r => {
+        const dslExists = fixedData.results.some(r => {
             const tech = (r.techno || '').toLowerCase();
             return tech.includes('adsl') || tech.includes('vdsl');
         });
-        if (dslRec) hasDsl = true;
+        
+        if (dslExists) hasDsl = true;
     }
 
-    // --- MOBIEL INTERNET ANALYSE ---
-    let mobile = { orange: null, sfr: null, bouygues: null, free: null };
-    if (mobileData.results) {
+    // MOBIEL INTERNET
+    if (mobileData.results && mobileData.results.length > 0) {
         mobileData.results.forEach(r => {
-            const op = (r.nom_operateur || r.operateur || '').toLowerCase();
-            const heeft4G = r.couverture_4g === 1 || r.couverture_4g === '1' || r.couverture === 'Très bonne couverture' || r.couverture === 'Bonne couverture';
-            const heeft5G = r.couverture_5g === 1 || r.couverture_5g === '1';
+            // Normaliseer operator naam
+            const rawOp = r.nom_operateur || r.operateur || '';
+            const op = rawOp.toLowerCase();
+            
+            if (!op) return;
+
+            // Bepaal beste signaal in de buurt
+            const is4G = r.couverture_4g === 1 || r.couverture_4g === '1' || 
+                         (typeof r.couverture === 'string' && r.couverture.includes('Bonne'));
+            const is5G = r.couverture_5g === 1 || r.couverture_5g === '1';
 
             let status = null;
-            if (heeft5G) status = "5G/4G";
-            else if (heeft4G) status = "4G";
+            if (is5G) status = "5G/4G";
+            else if (is4G) status = "4G";
 
-            if (op && status) {
+            // Update als we een betere status vinden dan we al hadden
+            if (status) {
                 if (!mobile[op] || mobile[op] === "Beschikbaar" || (status === "5G/4G" && mobile[op] === "4G")) {
                     mobile[op] = status;
                 }
             }
         });
-        // Fallback
+        
+        // Fallback: als we de operator zien maar geen status konden bepalen
         mobileData.results.forEach(r => {
              const op = (r.nom_operateur || r.operateur || '').toLowerCase();
              if (op && !mobile[op]) mobile[op] = "Beschikbaar"; 
         });
     }
 
+    // 5. RESPONSE
     return res.status(200).json({
       ok: true,
       address_found: label,
       gps: { lat, lon },
-      match_level: matchType, // Handig om te zien: "exact_huisnummer" of "straat"
+      search_method: "gps_radius_500m",
       fibre: hasFibre,
       dsl: hasDsl,
       mobile: mobile
@@ -146,6 +120,7 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error("Backend Error:", error);
+    // Stuur JSON terug bij crash
     return res.status(500).json({ 
       ok: false, 
       error: "Server Fout", 
