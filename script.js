@@ -1,5 +1,5 @@
 // script.js
-// De Slimme Wegwijzer logica (Maximum Zoom)
+// De Slimme Wegwijzer - Finale Instructies
 
 let providersData = null;
 async function loadProviders() {
@@ -52,10 +52,8 @@ async function selectAddress(feature) {
   document.getElementById("addressInput").value = label;
   document.getElementById("normalizedAddress").textContent = label;
   
-  // Toon resultaten blok
   document.getElementById("results").style.display = "block";
   
-  // Start de Gids-flow met de coördinaten van BAN
   startGuideFlow(coords[1], coords[0]);
 }
 
@@ -64,39 +62,43 @@ function startGuideFlow(lat, lon) {
     const output = document.getElementById("arcepOutput");
     const techCards = document.getElementById("techCards");
     
-    // Reset
     techCards.innerHTML = "";
     
-    // ZOOM LEVEL AANGEPAST NAAR 20 (MAXIMAAL)
+    // We linken naar de kaart op maximaal zoomniveau
     const officialUrl = `https://maconnexioninternet.arcep.fr/?lat=${lat}&lng=${lon}&zoom=20&mode=debit&techno=filaire`;
 
     output.innerHTML = `
-        <div style="background:#f8f9fa; border:1px solid #ddd; padding:20px; border-radius:8px; text-align:center;">
-            <h3 style="margin-top:0; color:#800000;">Stap 1: Check de kaart</h3>
-            <p>De publieke database loopt soms achter. Kijk daarom direct op de officiële kaart van de toezichthouder.</p>
+        <div style="background:#f0f7ff; border:1px solid #cce5ff; padding:20px; border-radius:8px; text-align:center;">
+            <h3 style="margin-top:0; color:#004085;">Stap 1: Controleer uw aansluiting</h3>
+            <p style="margin-bottom:20px; color:#004085;">
+                De database voor uw regio is complex. We openen de officiële kaart <strong>exact op uw dak</strong>.
+                <br>Klik daar op het bolletje op uw huis om uw status te zien.
+            </p>
             
             <a href="${officialUrl}" target="_blank" 
-               style="display:inline-block; background:#800000; color:white; padding:12px 20px; text-decoration:none; border-radius:6px; font-weight:bold; font-size:16px; margin-bottom:15px;">
-               📍 Open Kaart (Max Zoom)
+               style="display:inline-block; background:#0069d9; color:white; padding:14px 24px; text-decoration:none; border-radius:6px; font-weight:bold; font-size:18px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+               📍 Open de Kaart
             </a>
             
-            <p style="font-weight:bold; margin-top:15px;">Welke kleur stip ziet u op uw huis?</p>
-            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-                <button onclick="showResult('fibre')" style="padding:10px 15px; border:1px solid #0055aa; background:white; color:#0055aa; border-radius:5px; cursor:pointer; font-weight:bold;">
-                    🔵/🟢 Blauw of Groen (Glasvezel)
-                </button>
-                <button onclick="showResult('dsl')" style="padding:10px 15px; border:1px solid #ffc107; background:white; color:#b38600; border-radius:5px; cursor:pointer; font-weight:bold;">
-                    🟡 Geel (Koper/DSL)
-                </button>
-                <button onclick="showResult('none')" style="padding:10px 15px; border:1px solid #6c757d; background:white; color:#6c757d; border-radius:5px; cursor:pointer; font-weight:bold;">
-                    ⚪ Grijs / Niets
-                </button>
+            <div style="margin-top:30px; border-top:1px solid #cce5ff; padding-top:20px;">
+                <p style="font-weight:bold;">Stap 2: Wat zag u op de kaart?</p>
+                <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                    <button onclick="showResult('fibre')" style="padding:12px 20px; border:1px solid #28a745; background:white; color:#28a745; border-radius:6px; cursor:pointer; font-weight:bold; font-size:15px;">
+                        🟢 Groen puntje (Glasvezel)
+                    </button>
+                    <button onclick="showResult('dsl')" style="padding:12px 20px; border:1px solid #ffc107; background:white; color:#d39e00; border-radius:6px; cursor:pointer; font-weight:bold; font-size:15px;">
+                        🟡 Geel (Koper/DSL)
+                    </button>
+                    <button onclick="showResult('none')" style="padding:12px 20px; border:1px solid #6c757d; background:white; color:#6c757d; border-radius:6px; cursor:pointer; font-weight:bold; font-size:15px;">
+                        ⚪ Grijs / Geen puntje
+                    </button>
+                </div>
             </div>
         </div>
     `;
 }
 
-// --- RENDER RESULTATEN OP BASIS VAN KEUZE ---
+// --- RENDER RESULTATEN ---
 function showResult(type) {
     const container = document.getElementById("techCards");
     const internet = providersData?.internet || {};
@@ -106,55 +108,58 @@ function showResult(type) {
 
     if (type === 'fibre') {
         html = `
-            <div style="background:#d4edda; color:#155724; padding:15px; border-radius:8px; margin-bottom:20px;">
-                <strong>Goed nieuws!</strong> U heeft Glasvezel. U kunt tot 1 Gbit/s halen (zoals op de kaart staat).
+            <div style="background:#d4edda; color:#155724; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #c3e6cb;">
+                <strong>✅ Gefeliciteerd!</strong> Er ligt Glasvezel tot in uw huis. <br>
+                U kunt abonnementen afsluiten tot 1 Gbit/s of hoger.
             </div>
             <div class="tech-card">
                 <span class="pill">Aanbevolen</span>
                 <h3>Glasvezel Providers</h3>
-                <p>De beste keuze voor TV en thuiswerken.</p>
+                <p>Stabiel, snel en geschikt voor alles.</p>
                 <div class="links-list">${listLinks(internet.fibre)}</div>
             </div>
         `;
     } else if (type === 'dsl') {
         html = `
-            <div style="background:#fff3cd; color:#856404; padding:15px; border-radius:8px; margin-bottom:20px;">
-                <strong>Let op:</strong> U heeft waarschijnlijk alleen ADSL/VDSL. De snelheid kan tegenvallen.
-                Overweeg 4G of Starlink als de snelheid onder de 10 Mbit/s ligt.
+            <div style="background:#fff3cd; color:#856404; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #ffeeba;">
+                <strong>⚠️ Let op:</strong> U heeft waarschijnlijk een koperlijn (ADSL/VDSL). <br>
+                De snelheid hangt af van de afstand tot de centrale. Is het te traag? Overweeg Starlink.
             </div>
-            <div class="tech-card" style="opacity:0.8;">
-                <span class="pill">Optie A</span>
+            <div class="tech-card" style="opacity:0.9;">
+                <span class="pill">Optie A (Standaard)</span>
                 <h3>ADSL/VDSL</h3>
                 <p>Via de telefoonlijn.</p>
-                <div class="links-list">${listLinks(internet.fibre)}</div> </div>
+                <div class="links-list">${listLinks(internet.fibre)}</div>
+            </div>
             <div class="tech-card">
                 <span class="pill">Optie B (Sneller)</span>
                 <h3>Starlink</h3>
-                <p>Voor als de ADSL te traag is.</p>
+                <p>Hoge snelheid via satelliet.</p>
                 <div class="links-list">${listLinks(internet.leo)}</div>
             </div>
             <div class="tech-card">
                 <span class="pill">Optie C</span>
                 <h3>4G Box</h3>
-                <p>Afhankelijk van bereik.</p>
+                <p>Check bereik op uw telefoon.</p>
                 <div class="links-list">${listLinks(internet["4g5g"])}</div>
             </div>
         `;
     } else {
         html = `
-            <div style="background:#f8d7da; color:#721c24; padding:15px; border-radius:8px; margin-bottom:20px;">
-                <strong>Buitengebied:</strong> Er lijkt geen vaste lijn beschikbaar. Starlink is hier vaak de beste oplossing.
+            <div style="background:#f8d7da; color:#721c24; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #f5c6cb;">
+                <strong>❌ Buitengebied:</strong> Er lijkt geen vaste lijn geregistreerd op uw exacte locatie. <br>
+                Starlink is hier vaak de enige stabiele oplossing voor snel internet.
             </div>
             <div class="tech-card">
                 <span class="pill" style="background:#006400;">Beste Keuze</span>
                 <h3>Starlink (Satelliet)</h3>
-                <p>Werkt overal, hoge snelheid, stabiel.</p>
+                <p>Werkt overal in Frankrijk, hoge snelheid.</p>
                 <div class="links-list">${listLinks(internet.leo)}</div>
             </div>
             <div class="tech-card">
                 <span class="pill">Alternatief</span>
                 <h3>4G/5G Box</h3>
-                <p>Check eerst het bereik op uw telefoon.</p>
+                <p>Alleen als u goed mobiel bereik heeft.</p>
                 <div class="links-list">${listLinks(internet["4g5g"])}</div>
             </div>
         `;
@@ -162,7 +167,6 @@ function showResult(type) {
 
     container.innerHTML = html;
     
-    // Vul TV en VPN ook meteen in
     const tv = providersData?.tv?.nl || [];
     document.getElementById("tvList").innerHTML = tv.map(t => `<li>${t.name} (<a href="${t.url}" target="_blank">link</a>)</li>`).join("");
     const vpn = providersData?.vpn || [];
