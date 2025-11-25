@@ -1,5 +1,5 @@
 // api/arcep.js
-// Vercel Function – Backend voor ARCEP + BAN integratie
+// Nieuwe ARCEP-backend: BAN → INSEE → OpenDataSoft datasets (fibre, DSL, mobiel)
 
 export default async function handler(req, res) {
   try {
@@ -8,10 +8,13 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Missing ?address=" });
     }
 
-    // 1) Adres → BAN API → coördinaten
+    //
+    // 1) BAN → coordinaten + INSEE-code
+    //
     const banUrl =
       "https://api-adresse.data.gouv.fr/search/?q=" +
-      encodeURIComponent(address);
+      encodeURIComponent(address) +
+      "&limit=1";
 
     const banRes = await fetch(banUrl);
     const banData = await banRes.json();
@@ -19,104 +22,99 @@ export default async function handler(req, res) {
     if (!banData.features || banData.features.length === 0) {
       return res.status(200).json({
         ok: false,
-        reason: "BAN: adres niet gevonden",
-        fibre: null,
-        dsl: null,
-        mobile: null,
-        raw: {}
+        reason: "Adres niet gevonden in BAN",
       });
     }
 
-    const feature = banData.features[0];
-    const lon = feature.geometry.coordinates[0];
-    const lat = feature.geometry.coordinates[1];
+    const f = banData.features[0];
+    const lon = f.geometry.coordinates[0];
+    const lat = f.geometry.coordinates[1];
+    const insee = f.properties.citycode; // INSEE-code
+    const postcode = f.properties.postcode;
 
-    // 2) lat/lon → ARCEP vaste netwerken (fibre, DSL)
-    const fixedUrl =
-      "https://maconnexioninternet.arcep.fr/api/eligibility/" +
-      lat +
-      "/" +
-      lon;
+    //
+    // 2) OpenDataSoft ARCEP: vaste verbindingen (fibre, ADSL, VDSL)
+    //
+    const fibreUrl =
+      "https://data.arcep.fr/api/explore/v2.1/catalog/datasets/maconnexioninternet/records" +
+      `?where=code_insee='${insee}'&limit=200`;
 
-    const fixedRes = await fetch(fixedUrl);
-    let fixedData = null;
+    const fibreRes = await fetch(fibreUrl);
+    const fibreData = await fibreRes.json();
 
-    if (fixedRes.ok) {
-      fixedData = await fixedRes.json();
-    }
-
-    // Parsing bewijs (vast internet)
     let fibre = false;
     let fibreOperators = [];
     let dsl = false;
 
-    if (fixedData && fixedData.eligibility) {
-      fixedData.eligibility.forEach((tech) => {
-        if (tech.technology === "FttH" && tech.eligibility === "1") {
+    if (fibreData?.results?.length > 0) {
+      fibreData.results.forEach((row) => {
+        // Fibre beschikbaar?
+        if (row.techno === "FttH" && row.elig === true) {
           fibre = true;
-          if (tech.operator) fibreOperators.push(tech.operator);
+          if (row.operateur) fibreOperators.push(row.operateur);
         }
-        if (tech.technology === "ADSL" && tech.eligibility === "1") {
+
+        // DSL?
+        if ((row.techno === "ADSL" || row.techno === "VDSL2") && row.elig) {
           dsl = true;
         }
       });
     }
 
-    // 3) lat/lon → ARCEP mobiele dekking
+    fibreOperators = [...new Set(fibreOperators)];
+
+    //
+    // 3) OpenDataSoft ARCEP: mobiele dekking
+    //
     const mobileUrl =
-      "https://monreseaumobile.arcep.fr/api/device/coverage?lat=" +
-      lat +
-      "&lon=" +
-      lon;
+      "https://data.arcep.fr/api/explore/v2.1/catalog/datasets/monreseaumobile/records" +
+      `?where=code_insee='${insee}'&limit=200`;
 
     const mobileRes = await fetch(mobileUrl);
-    let mobileData = null;
+    const mobileData = await mobileRes.json();
 
-    if (mobileRes.ok) {
-      mobileData = await mobileRes.json();
-    }
-
-    // Parsing mobiele dekking
     let mobile = {
       orange: null,
       sfr: null,
       bouygues: null,
-      free: null
+      free: null,
     };
 
-    if (mobileData && mobileData.coverages) {
-      mobileData.coverages.forEach((c) => {
-        if (c.operator && c.type === "4G") {
-          const op = c.operator.toLowerCase();
-          if (mobile[op] !== undefined) {
-            mobile[op] = c.coverage_level || "unknown";
-          }
+    if (mobileData?.results?.length > 0) {
+      mobileData.results.forEach((row) => {
+        const op = (row.operateur || "").toLowerCase();
+        const cov = row.couverture_4g || row.couverture || null;
+
+        if (mobile[op] !== undefined) {
+          mobile[op] = cov;
         }
       });
     }
 
-    // Uniek maken fiber operators
-    fibreOperators = [...new Set(fibreOperators)];
-
-    // 4) Final output naar front-end
+    //
+    // 4) Antwoord aan front-end
+    //
     return res.status(200).json({
       ok: true,
+      address: f.properties.label,
       lat,
       lon,
+      insee,
+      postcode,
       fibre,
       fibre_operators: fibreOperators,
       dsl,
       mobile,
       raw: {
-        ban: feature,
-        fixed: fixedData,
-        mobile: mobileData
-      }
+        ban: f,
+        fixed: fibreData,
+        mobile: mobileData,
+      },
     });
-  } catch (err) {
+  } catch (e) {
     return res.status(500).json({
-      error: err.message,
-      ok: false
+      ok: false,
+      error: e.message,
     });
   }
 }
