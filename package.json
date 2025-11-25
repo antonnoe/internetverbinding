@@ -1,8 +1,9 @@
 {
   "name": "internetverbinding",
   "version": "1.0.0",
+  "type": "module",
   "engines": {
-    "node": "22.x"
+    "node": "20.x"
   },
   "dependencies": {}
 }
