@@ -1,4 +1,6 @@
 // script.js
+// De Slimme Wegwijzer logica
+
 let providersData = null;
 async function loadProviders() {
   try {
@@ -8,6 +10,7 @@ async function loadProviders() {
 }
 loadProviders();
 
+// --- BAN LOGICA ---
 async function fetchAddresses() {
   const input = document.getElementById("addressInput");
   const box = document.getElementById("addressSuggestions");
@@ -21,14 +24,14 @@ async function fetchAddresses() {
     const res = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(query)}&limit=5`);
     const data = await res.json();
     renderSuggestions(data.features);
-  } catch (e) { box.innerHTML = "<div class='suggestion-item'>API Fout</div>"; }
+  } catch (e) { box.innerHTML = "<div class='suggestion-item'>...</div>"; }
 }
 
 function renderSuggestions(features) {
   const box = document.getElementById("addressSuggestions");
   box.innerHTML = "";
   if (!features || features.length === 0) {
-    box.innerHTML = "<div class='suggestion-item'>Geen adres gevonden.</div>";
+    box.style.display = 'none';
     return;
   }
   features.forEach((f) => {
@@ -38,123 +41,131 @@ function renderSuggestions(features) {
     div.onclick = () => selectAddress(f);
     box.appendChild(div);
   });
+  box.style.display = 'block';
 }
 
 async function selectAddress(feature) {
   document.getElementById("addressSuggestions").style.display = "none";
   const label = feature.properties.label;
+  const coords = feature.geometry.coordinates; // [lon, lat]
+  
   document.getElementById("addressInput").value = label;
   document.getElementById("normalizedAddress").textContent = label;
   
+  // Toon resultaten blok
   document.getElementById("results").style.display = "block";
-  document.getElementById("arcepOutput").innerHTML = "<p>Bezig met scannen van netwerken...</p>";
-  document.getElementById("techCards").innerHTML = ""; 
-
-  await fetchArcepData(label);
+  
+  // Start de Gids-flow
+  startGuideFlow(coords[1], coords[0]);
 }
 
-async function fetchArcepData(address) {
-  try {
-    const res = await fetch(`/api/arcep?address=${encodeURIComponent(address)}`);
-    const contentType = res.headers.get("content-type");
+// --- DE GIDS FLOW ---
+function startGuideFlow(lat, lon) {
+    const output = document.getElementById("arcepOutput");
+    const techCards = document.getElementById("techCards");
     
-    if (contentType && contentType.includes("text/html")) throw new Error("Server Error (HTML)");
+    // Reset
+    techCards.innerHTML = "";
     
-    const data = await res.json();
+    // Genereer de diepe link naar de officiële kaart
+    // Zoom level 18 is straatniveau, techno=filaire toont glasvezel/koper
+    const officialUrl = `https://maconnexioninternet.arcep.fr/?lat=${lat}&lng=${lon}&zoom=18&mode=debit&techno=filaire`;
 
-    if (!data.ok) {
-      renderFallbackLink();
-      return;
-    }
-
-    renderArcepResult(data);
-    renderGeneralCards(data);
-
-  } catch (e) {
-    renderFallbackLink();
-  }
-}
-
-function renderFallbackLink() {
-    document.getElementById("arcepOutput").innerHTML = `
-        <div style="background:#f0f0f0; padding:15px; border-radius:8px; border:1px solid #ccc;">
-            <h3 style="margin-top:0; color:#800000;">Geen publieke data beschikbaar</h3>
-            <p>De publieke database geeft geen uitsluitsel voor dit exacte adres. <br>
-            Controleer uw adres op de officiële kaart van de toezichthouder:</p>
-            <a href="https://maconnexioninternet.arcep.fr/" target="_blank" 
-               style="display:inline-block; background:#800000; color:white; padding:10px 15px; text-decoration:none; border-radius:5px; font-weight:bold;">
-               Open Officiële ARCEP Kaart &rarr;
+    output.innerHTML = `
+        <div style="background:#f8f9fa; border:1px solid #ddd; padding:20px; border-radius:8px; text-align:center;">
+            <h3 style="margin-top:0; color:#800000;">Stap 1: Check de officiële kaart</h3>
+            <p>De publieke database loopt soms achter. Kijk daarom direct op de officiële kaart van de toezichthouder.</p>
+            
+            <a href="${officialUrl}" target="_blank" 
+               style="display:inline-block; background:#800000; color:white; padding:12px 20px; text-decoration:none; border-radius:6px; font-weight:bold; font-size:16px; margin-bottom:15px;">
+               📍 Open Kaart op mijn adres
             </a>
+            
+            <p style="font-weight:bold; margin-top:15px;">Wat ziet u op of bij uw huis?</p>
+            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                <button onclick="showResult('fibre')" style="padding:10px 15px; border:1px solid #28a745; background:white; color:#28a745; border-radius:5px; cursor:pointer; font-weight:bold;">
+                    🟢 Groen puntje (Fibre)
+                </button>
+                <button onclick="showResult('dsl')" style="padding:10px 15px; border:1px solid #ffc107; background:white; color:#b38600; border-radius:5px; cursor:pointer; font-weight:bold;">
+                    🟡 Geel/Oranje (Koper/DSL)
+                </button>
+                <button onclick="showResult('none')" style="padding:10px 15px; border:1px solid #6c757d; background:white; color:#6c757d; border-radius:5px; cursor:pointer; font-weight:bold;">
+                    ⚪ Niets / Grijs
+                </button>
+            </div>
         </div>
     `;
 }
 
-function renderArcepResult(data) {
-  const container = document.getElementById("arcepOutput");
-  const operators = data.fibre_operators || [];
-
-  let html = `<div style="margin-bottom:20px;">`;
-
-  if (operators.length > 0) {
-      html += `
-        <div style="background:#e6fffa; border:1px solid #b2f5ea; padding:15px; border-radius:8px; margin-bottom:10px;">
-            <h3 style="color:#047857; margin-top:0;">✔ Glasvezel gevonden in uw omgeving</h3>
-            <p>Binnen 1000m zijn de volgende netwerken actief:</p>
-            <p style="font-weight:bold; font-size:1.1em;">${operators.join(", ")}</p>
-        </div>
-      `;
-  } else {
-      html += `
-        <div style="background:#fff5f5; border:1px solid #fed7d7; padding:15px; border-radius:8px; margin-bottom:10px;">
-            <h3 style="color:#c53030; margin-top:0;">Geen Glasvezel in directe omgeving</h3>
-            <p>In de publieke data (1000m straal) zien wij geen actieve glasvezel providers.</p>
-        </div>
-      `;
-  }
-
-  html += `
-    <p style="font-size:0.9em; color:#666; margin-top:10px;">
-        <em>Zeker weten voor uw exacte huisnummer?</em> <a href="https://maconnexioninternet.arcep.fr/" target="_blank" style="color:#800000;">Doe de officiële check op Arcep.fr</a>
-    </p>
-  </div>`;
-
-  container.innerHTML = html;
-}
-
-function renderGeneralCards(data) {
+// --- RENDER RESULTATEN OP BASIS VAN KEUZE ---
+function showResult(type) {
     const container = document.getElementById("techCards");
     const internet = providersData?.internet || {};
-    const listLinks = (arr) => arr ? arr.map(p => `<a href="${p.url}" target="_blank" style="display:block">${p.name}</a>`).join("") : "";
+    const listLinks = (arr) => arr ? arr.map(p => `<a href="${p.url}" target="_blank" style="display:block; margin-bottom:4px;">${p.name}</a>`).join("") : "";
 
-    const fibreFound = data.fibre_operators && data.fibre_operators.length > 0;
-    const fibreText = fibreFound ? "<strong>Beschikbaar (zie lijst)</strong>" : "Niet gevonden";
-    const fibreColor = fibreFound ? "green" : "black";
+    let html = "";
 
-    const m = data.mobile || {};
-    const mobText = `O: ${m.orange||'-'} | S: ${m.sfr||'-'} | B: ${m.bouygues||'-'} | F: ${m.free||'-'}`;
+    if (type === 'fibre') {
+        html = `
+            <div style="background:#d4edda; color:#155724; padding:15px; border-radius:8px; margin-bottom:20px;">
+                <strong>Goed nieuws!</strong> Er ligt Glasvezel. U kunt tot 1 Gbit/s of meer halen.
+            </div>
+            <div class="tech-card">
+                <span class="pill">Aanbevolen</span>
+                <h3>Glasvezel Providers</h3>
+                <p>De beste keuze voor TV en thuiswerken.</p>
+                <div class="links-list">${listLinks(internet.fibre)}</div>
+            </div>
+        `;
+    } else if (type === 'dsl') {
+        html = `
+            <div style="background:#fff3cd; color:#856404; padding:15px; border-radius:8px; margin-bottom:20px;">
+                <strong>Let op:</strong> U heeft waarschijnlijk alleen ADSL/VDSL. De snelheid kan tegenvallen.
+                Overweeg 4G of Starlink als de snelheid onder de 10 Mbit/s ligt.
+            </div>
+            <div class="tech-card" style="opacity:0.8;">
+                <span class="pill">Optie A</span>
+                <h3>ADSL/VDSL</h3>
+                <p>Via de telefoonlijn.</p>
+                <div class="links-list">${listLinks(internet.fibre)}</div> </div>
+            <div class="tech-card">
+                <span class="pill">Optie B (Sneller)</span>
+                <h3>Starlink</h3>
+                <p>Voor als de ADSL te traag is.</p>
+                <div class="links-list">${listLinks(internet.leo)}</div>
+            </div>
+            <div class="tech-card">
+                <span class="pill">Optie C</span>
+                <h3>4G Box</h3>
+                <p>Afhankelijk van bereik.</p>
+                <div class="links-list">${listLinks(internet["4g5g"])}</div>
+            </div>
+        `;
+    } else {
+        html = `
+            <div style="background:#f8d7da; color:#721c24; padding:15px; border-radius:8px; margin-bottom:20px;">
+                <strong>Buitengebied:</strong> Er lijkt geen vaste lijn beschikbaar. Starlink is hier vaak de beste oplossing.
+            </div>
+            <div class="tech-card">
+                <span class="pill" style="background:#006400;">Beste Keuze</span>
+                <h3>Starlink (Satelliet)</h3>
+                <p>Werkt overal, hoge snelheid, stabiel.</p>
+                <div class="links-list">${listLinks(internet.leo)}</div>
+            </div>
+            <div class="tech-card">
+                <span class="pill">Alternatief</span>
+                <h3>4G/5G Box</h3>
+                <p>Check eerst het bereik op uw telefoon.</p>
+                <div class="links-list">${listLinks(internet["4g5g"])}</div>
+            </div>
+        `;
+    }
 
-    container.innerHTML = `
-    <div class="tech-card">
-        <span class="pill">Fibre</span>
-        <h3>Glasvezel</h3>
-        <p style="color:${fibreColor}">${fibreText}</p>
-        ${listLinks(internet.fibre)}
-    </div>
-    <div class="tech-card">
-        <span class="pill">4G/5G</span>
-        <h3>4G/5G Box</h3>
-        <p>${mobText}</p>
-        ${listLinks(internet["4g5g"])}
-    </div>
-    <div class="tech-card">
-        <span class="pill">Starlink</span>
-        <h3>Satelliet (LEO)</h3>
-        <div class="links-list">${listLinks(internet.leo)}</div>
-    </div>
-  `;
-  
-  const tv = providersData?.tv?.nl || [];
-  document.getElementById("tvList").innerHTML = tv.map(t => `<li>${t.name} (<a href="${t.url}" target="_blank">link</a>)</li>`).join("");
-  const vpn = providersData?.vpn || [];
-  document.getElementById("vpnList").innerHTML = vpn.map(v => `<li>${v.name} (<a href="${v.url}" target="_blank">site</a>)</li>`).join("");
+    container.innerHTML = html;
+    
+    // Vul TV en VPN ook meteen in
+    const tv = providersData?.tv?.nl || [];
+    document.getElementById("tvList").innerHTML = tv.map(t => `<li>${t.name} (<a href="${t.url}" target="_blank">link</a>)</li>`).join("");
+    const vpn = providersData?.vpn || [];
+    document.getElementById("vpnList").innerHTML = vpn.map(v => `<li>${v.name} – ${v.type} (<a href="${v.url}" target="_blank">site</a>)</li>`).join("");
 }
