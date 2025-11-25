@@ -1,5 +1,5 @@
-// api/arcep.js
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
+  // Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Content-Type', 'application/json');
 
@@ -10,7 +10,9 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    // 1. BAN Lookup
+    // ---------------------------------------------------------
+    // 1. BAN: Haal GPS op
+    // ---------------------------------------------------------
     const banRes = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(address)}&limit=1`);
     const banData = await banRes.json();
 
@@ -19,60 +21,50 @@ module.exports = async function handler(req, res) {
     }
 
     const f = banData.features[0];
-    const props = f.properties;
-    const label = props.label;
     const [lon, lat] = f.geometry.coordinates;
-    const postcode = props.postcode;
-    const street = props.street || props.name;
+    const label = f.properties.label;
 
+    // ---------------------------------------------------------
+    // 2. ARCEP: Haal alles op binnen 200 meter (GPS ONLY)
+    // ---------------------------------------------------------
+    // We negeren straatnamen en postcodes. We kijken puur geografisch.
     const baseUrl = "https://data.arcep.fr/api/explore/v2.1/catalog/datasets";
+    
+    // Radius query
+    const geoQuery = `within_distance(geopoint, geom'POINT(${lon} ${lat})', 200m)`;
+    const whereClause = encodeURIComponent(geoQuery);
+    
+    // URLs
+    const fixedUrl = `${baseUrl}/maconnexioninternet/records?where=${whereClause}&limit=100`;
+    const mobileUrl = `${baseUrl}/monreseaumobile/records?where=${whereClause}&limit=50`;
 
-    // 2. Zoekstrategie: Eerst Straat, dan GPS Fallback
+    // Fetch Parallel
+    const [fixedRes, mobileRes] = await Promise.all([
+        fetch(fixedUrl),
+        fetch(mobileUrl)
+    ]);
+
     let fixedData = { results: [] };
-    let searchMethod = "init";
-
-    // POGING A: Straatnaam + Postcode (Precies)
-    if (street && postcode) {
-        const qStreet = encodeURIComponent(street);
-        const qPostcode = encodeURIComponent(`code_postal="${postcode}"`);
-        // Zoek ruim (500 hits) om de straat te vinden
-        const url = `${baseUrl}/maconnexioninternet/records?where=${qPostcode}&q=${qStreet}&limit=100`;
-        
-        const res = await fetch(url);
-        if (res.ok) fixedData = await res.json();
-    }
-
-    // POGING B: GPS Fallback (Als A faalt of leeg is)
-    if (!fixedData.results || fixedData.results.length === 0) {
-        searchMethod = "gps_fallback_1000m";
-        // Ruime radius (1000m) voor platteland
-        const geo = `within_distance(geopoint, geom'POINT(${lon} ${lat})', 1000m)`;
-        const url = `${baseUrl}/maconnexioninternet/records?where=${encodeURIComponent(geo)}&limit=100`;
-        
-        const res = await fetch(url);
-        if (res.ok) fixedData = await res.json();
-    } else {
-        searchMethod = "street_match";
-    }
-
-    // 3. Mobiel (Altijd GPS, ruime straal)
     let mobileData = { results: [] };
-    const geoMobile = `within_distance(geopoint, geom'POINT(${lon} ${lat})', 1000m)`;
-    const mobileUrl = `${baseUrl}/monreseaumobile/records?where=${encodeURIComponent(geoMobile)}&limit=50`;
-    const mobileRes = await fetch(mobileUrl);
+
+    if (fixedRes.ok) fixedData = await fixedRes.json();
     if (mobileRes.ok) mobileData = await mobileRes.json();
 
-    // 4. Verwerking
+    // ---------------------------------------------------------
+    // 3. Verwerking naar lijst
+    // ---------------------------------------------------------
     const streetMap = new Map();
 
     if (fixedData.results) {
       fixedData.results.forEach(r => {
-        // Bij GPS fallback pakken we alles, bij straatmatch filteren we niet extra
-        const num = r.numero || r.numero_voie || "?"; 
-        const voie = r.nom_voie || street || "Omgeving";
+        const num = r.numero || r.numero_voie;
+        const voie = r.nom_voie || "Nabije omgeving";
         const techno = (r.techno || '').toLowerCase();
         
-        // Unieke key: nummer + straat (zodat we bij GPS fallback niet alles op 1 hoop gooien)
+        // Als er geen huisnummer is, slaan we hem over voor de lijst, 
+        // maar we onthouden wel dat er glasvezel in de buurt is.
+        if (!num) return;
+
         const key = `${num}_${voie}`;
 
         if (!streetMap.has(key)) {
@@ -86,24 +78,25 @@ module.exports = async function handler(req, res) {
 
         const entry = streetMap.get(key);
 
-        if (techno.includes('ftth')) entry.hasFibre = true; // Ruime check
+        if (techno.includes('ftth')) entry.hasFibre = true;
         if (techno.includes('adsl') || techno.includes('vdsl')) entry.hasDsl = true;
       });
     }
 
-    // Sorteren (Numeriek waar mogelijk)
+    // Sorteren
     const neighbors = Array.from(streetMap.values()).sort((a, b) => {
-        const nA = parseInt(a.number) || 0;
-        const nB = parseInt(b.number) || 0;
-        return nA - nB;
+        return parseInt(a.number) - parseInt(b.number);
     });
 
-    // Mobiel verwerken
+    // ---------------------------------------------------------
+    // 4. Mobiel & Response
+    // ---------------------------------------------------------
     let mobile = { orange: null, sfr: null, bouygues: null, free: null };
+    
     if (mobileData.results) {
        mobileData.results.forEach(r => {
            const op = (r.nom_operateur || r.operateur || '').toLowerCase();
-           // Check dekking
+           // Check 4G/5G
            const is4G = r.couverture_4g == 1 || r.couverture_4g === true;
            const is5G = r.couverture_5g == 1 || r.couverture_5g === true;
            
@@ -112,13 +105,12 @@ module.exports = async function handler(req, res) {
            else if (is4G) status = "4G";
 
            if (op && status) {
-               // Upgrade status als we beter vinden
                if (!mobile[op] || mobile[op] === "Beschikbaar" || (status === "5G/4G" && mobile[op] === "4G")) {
                    mobile[op] = status;
                }
            }
        });
-       // Fallback loop voor als coverage kolommen leeg zijn
+       // Fallback
        mobileData.results.forEach(r => {
             const op = (r.nom_operateur || r.operateur || '').toLowerCase();
             if(op && !mobile[op]) mobile[op] = "Beschikbaar";
@@ -128,7 +120,8 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       address_found: label,
-      search_method: searchMethod, // Zie je in de JSON output voor debug
+      gps: { lat, lon },
+      search_method: "gps_radius_200m",
       total_found: neighbors.length,
       neighbors: neighbors,
       mobile: mobile
