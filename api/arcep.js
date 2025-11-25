@@ -1,6 +1,4 @@
 // api/arcep.js
-// Scanner: Zoekt providers in 1000m straal (negeert huisnummers)
-
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Content-Type', 'application/json');
@@ -26,9 +24,9 @@ module.exports = async function handler(req, res) {
 
     // 2. ARCEP SCAN (Radius 1000m)
     const baseUrl = "https://data.arcep.fr/api/explore/v2.1/catalog/datasets";
-    
-    // We halen tot 100 resultaten op in de wijde omtrek
     const geoQuery = `within_distance(geopoint, geom'POINT(${lon} ${lat})', 1000m)`;
+    
+    // Haal 100 resultaten op
     const fixedUrl = `${baseUrl}/maconnexioninternet/records?where=${encodeURIComponent(geoQuery)}&limit=100`;
     const mobileUrl = `${baseUrl}/monreseaumobile/records?where=${encodeURIComponent(geoQuery)}&limit=100`;
 
@@ -41,32 +39,28 @@ module.exports = async function handler(req, res) {
     if (mobileRes.ok) mobileData = await mobileRes.json();
 
     // 3. DATA VERWERKEN: Welke operators zijn er?
-    // We gebruiken een Set om dubbele namen te voorkomen
     const fibreOperators = new Set();
     let hasDsl = false;
 
     if (fixedData.results) {
       fixedData.results.forEach(r => {
         const tech = (r.techno || '').toLowerCase();
-        const op = r.nom_operateur || r.operateur; // Naam van de provider
+        const op = r.nom_operateur || r.operateur; 
 
-        // Als we FttH zien, slaan we de provider op
         if (tech.includes('ftth') && op) {
             fibreOperators.add(op);
         }
-        // Als we DSL zien, noteren we dat
         if (tech.includes('adsl') || tech.includes('vdsl')) {
             hasDsl = true;
         }
       });
     }
 
-    // Mobiele data verwerken (maximaal signaal per operator)
+    // Mobiele data
     let mobile = { orange: null, sfr: null, bouygues: null, free: null };
     if (mobileData.results) {
        mobileData.results.forEach(r => {
            const op = (r.nom_operateur || r.operateur || '').toLowerCase();
-           
            const is4G = r.couverture_4g == 1 || r.couverture_4g === true;
            const is5G = r.couverture_5g == 1 || r.couverture_5g === true;
            
@@ -87,14 +81,12 @@ module.exports = async function handler(req, res) {
        });
     }
 
-    // Sorteren van operators
     const fibreList = Array.from(fibreOperators).sort();
 
     return res.status(200).json({
       ok: true,
       address_found: label,
       gps: { lat, lon },
-      // Dit is de kern: een lijst met namen, geen huisnummers
       fibre_operators: fibreList, 
       dsl_available: hasDsl,
       mobile: mobile
