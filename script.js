@@ -1,3 +1,4 @@
+// script.js
 let providersData = null;
 async function loadProviders() {
   try {
@@ -46,73 +47,83 @@ async function selectAddress(feature) {
   document.getElementById("normalizedAddress").textContent = label;
   
   document.getElementById("results").style.display = "block";
-  document.getElementById("streetScan").innerHTML = "<p>Bezig met scannen van de straat...</p>";
+  document.getElementById("arcepOutput").innerHTML = "<p>Bezig met scannen van netwerken...</p>";
   document.getElementById("techCards").innerHTML = ""; 
 
-  await fetchStreetScan(label);
+  await fetchArcepData(label);
 }
 
-async function fetchStreetScan(address) {
+async function fetchArcepData(address) {
   try {
     const res = await fetch(`/api/arcep?address=${encodeURIComponent(address)}`);
     const contentType = res.headers.get("content-type");
+    
     if (contentType && contentType.includes("text/html")) throw new Error("Server Error (HTML)");
     
     const data = await res.json();
 
     if (!data.ok) {
-      document.getElementById("streetScan").innerHTML = `<p style="color:red">${data.error}</p>`;
+      // Als API faalt, toon direct de officiële link
+      renderFallbackLink();
       return;
     }
 
-    renderStreetList(data);
+    renderArcepResult(data);
     renderGeneralCards(data);
 
   } catch (e) {
-    document.getElementById("streetScan").innerHTML = `<p style="color:red">Fout: ${e.message}</p>`;
+    renderFallbackLink();
   }
 }
 
-function renderStreetList(data) {
-  const container = document.getElementById("streetScan");
-  const list = data.neighbors || [];
+// Als er niets gevonden is of error
+function renderFallbackLink() {
+    document.getElementById("arcepOutput").innerHTML = `
+        <div style="background:#f0f0f0; padding:15px; border-radius:8px; border:1px solid #ccc;">
+            <h3 style="margin-top:0; color:#800000;">Geen publieke data beschikbaar</h3>
+            <p>De publieke database geeft geen uitsluitsel voor dit exacte adres. <br>
+            Controleer uw adres op de officiële kaart van de toezichthouder:</p>
+            <a href="https://maconnexioninternet.arcep.fr/" target="_blank" 
+               style="display:inline-block; background:#800000; color:white; padding:10px 15px; text-decoration:none; border-radius:5px; font-weight:bold;">
+               Open Officiële ARCEP Kaart &rarr;
+            </a>
+        </div>
+    `;
+}
 
-  if (list.length === 0) {
-      // Als we niets vinden, geven we een eerlijke melding ipv leeg scherm
-      container.innerHTML = `
-        <div style="background:#fff3cd; padding:15px; border-radius:8px; color:#856404; border:1px solid #ffeeba;">
-          <strong>Geen exacte nummers gevonden.</strong><br>
-          We konden in de database van ARCEP geen specifieke huisnummers vinden voor deze straat in deze postcode. 
-          Dit gebeurt soms in landelijke gebieden. Controleer de algemene beschikbaarheid hieronder.
-        </div>`;
-      return;
+function renderArcepResult(data) {
+  const container = document.getElementById("arcepOutput");
+  
+  const operators = data.fibre_operators || [];
+  const hasDsl = data.dsl_available;
+
+  // HTML Bouwen
+  let html = `<div style="margin-bottom:20px;">`;
+
+  if (operators.length > 0) {
+      html += `
+        <div style="background:#e6fffa; border:1px solid #b2f5ea; padding:15px; border-radius:8px; margin-bottom:10px;">
+            <h3 style="color:#047857; margin-top:0;">✔ Glasvezel gevonden in uw omgeving</h3>
+            <p>Binnen 1000m zijn de volgende netwerken actief:</p>
+            <p style="font-weight:bold; font-size:1.1em;">${operators.join(", ")}</p>
+        </div>
+      `;
+  } else {
+      html += `
+        <div style="background:#fff5f5; border:1px solid #fed7d7; padding:15px; border-radius:8px; margin-bottom:10px;">
+            <h3 style="color:#c53030; margin-top:0;">Geen Glasvezel in directe omgeving</h3>
+            <p>In de publieke data (1000m straal) zien wij geen actieve glasvezel providers.</p>
+        </div>
+      `;
   }
 
-  let html = `
-    <div style="background:#f9f9f9; padding:15px; border-radius:8px; border:1px solid #ddd;">
-      <h3 style="color:#800000; margin-top:0;">Resultaten in uw straat</h3>
-      <div style="max-height:250px; overflow-y:auto;">
-        <table style="width:100%; border-collapse:collapse; font-size:14px;">
-          <tr style="text-align:left; border-bottom:2px solid #ccc;">
-            <th style="padding:5px;">Nr.</th>
-            <th style="padding:5px;">Glasvezel</th>
-            <th style="padding:5px;">DSL</th>
-          </tr>
-  `;
+  // Altijd de link naar ARCEP tonen voor zekerheid
+  html += `
+    <p style="font-size:0.9em; color:#666; margin-top:10px;">
+        <em>Zeker weten voor uw exacte huisnummer?</em> <a href="https://maconnexioninternet.arcep.fr/" target="_blank" style="color:#800000;">Doe de officiële check op Arcep.fr</a>
+    </p>
+  </div>`;
 
-  list.forEach(n => {
-      const fCheck = n.hasFibre ? '<span style="color:green; font-weight:bold">✔ Ja</span>' : '<span style="color:#ccc">-</span>';
-      const dCheck = n.hasDsl ? '<span style="color:green;">✔ Ja</span>' : '<span style="color:#ccc">-</span>';
-      
-      html += `
-        <tr style="border-bottom:1px solid #eee;">
-            <td style="padding:8px;"><strong>${n.number}</strong></td>
-            <td style="padding:8px;">${fCheck}</td>
-            <td style="padding:8px;">${dCheck}</td>
-        </tr>`;
-  });
-
-  html += `</table></div></div>`;
   container.innerHTML = html;
 }
 
@@ -121,12 +132,12 @@ function renderGeneralCards(data) {
     const internet = providersData?.internet || {};
     const listLinks = (arr) => arr ? arr.map(p => `<a href="${p.url}" target="_blank" style="display:block">${p.name}</a>`).join("") : "";
 
-    // Als er ook maar 1 buurman fibre heeft, is het beschikbaar
-    const hasFibre = data.neighbors && data.neighbors.some(n => n.hasFibre);
-    const fibreText = hasFibre ? "<strong>Beschikbaar in uw straat!</strong>" : "Niet direct gevonden";
-    const fibreColor = hasFibre ? "green" : "black";
+    // Als we operators hebben gevonden, is het groen.
+    const fibreFound = data.fibre_operators && data.fibre_operators.length > 0;
+    const fibreText = fibreFound ? "<strong>Beschikbaar (zie lijst)</strong>" : "Niet gevonden";
+    const fibreColor = fibreFound ? "green" : "black";
 
-    // Mobiel formatteren
+    // Mobiel
     const m = data.mobile || {};
     const mobText = `O: ${m.orange||'-'} | S: ${m.sfr||'-'} | B: ${m.bouygues||'-'} | F: ${m.free||'-'}`;
 
@@ -150,7 +161,6 @@ function renderGeneralCards(data) {
     </div>
   `;
   
-  // TV & VPN vullen
   const tv = providersData?.tv?.nl || [];
   document.getElementById("tvList").innerHTML = tv.map(t => `<li>${t.name} (<a href="${t.url}" target="_blank">link</a>)</li>`).join("");
   const vpn = providersData?.vpn || [];
