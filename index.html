@@ -6,44 +6,70 @@
 <title>Internetverbinding – Dataverbinding Frankrijk</title>
 
 <style>
-body { font-family: Arial; padding:20px; background:white; color:#000; max-width:800px; margin:0 auto; }
+/* ... bestaande styles ... */
+body { font-family: Arial, sans-serif; padding:20px; background:white; color:#000; max-width:800px; margin:0 auto; padding-bottom: 100px; /* Ruimte voor de balk */ }
 h1 { color:#800000; margin-bottom:5px; }
-h3 { color:#800000; margin-top:30px; }
+h3 { color:#800000; margin-top:25px; margin-bottom:10px; }
 .pill { background:#800000; color:white; padding:4px 8px; border-radius:20px; font-size:11px; }
 .tech-card { border:1px solid #ccc; padding:15px; border-radius:8px; margin-bottom:20px; }
 .suggestion-item { padding:8px; border-bottom:1px solid #ddd; cursor:pointer; }
 .suggestion-item:hover { background:#f3eaea; }
 #addressSuggestions { border:1px solid #ccc; margin-top:5px; border-radius:6px; display:none; background:white; }
+ul { padding-left:20px; margin-top:0; }
+li { margin-bottom:5px; }
+footer { margin-top:50px; border-top:1px solid #eee; padding-top:20px; color:#888; font-size:13px; text-align:center; }
+
+/* NIEUW: De Sticky 'Afstandsbediening' */
+.sticky-bottom-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: white;
+    border-top: 2px solid #800000;
+    box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
+    padding: 15px;
+    text-align: center;
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.sticky-btn {
+    padding: 12px 20px;
+    border-radius: 30px; /* Ronde knoppen */
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
+    border: 2px solid;
+    background: white;
+    transition: transform 0.1s;
+}
+.sticky-btn:active { transform: scale(0.95); }
 </style>
 </head>
 
 <body>
 <h1>Internetverbinding</h1>
-<h3 style="color:#777;">Dataverbinding Frankrijk</h3>
+<h3 style="color:#777; margin-top:0; font-weight:normal;">Dataverbinding Frankrijk</h3>
 
-<p>Vul uw adres in. Wij scannen de omgeving op beschikbare aansluitingen.</p>
+<p>Vul uw adres in. Wij controleren de locatie en openen de officiële ARCEP-kaart.</p>
 
-<input id="addressInput" onkeyup="fetchAddresses()" placeholder="Bijv. 22 Rue de Sehen" style="width:100%;padding:12px;font-size:16px;" />
+<input id="addressInput" onkeyup="fetchAddresses()" placeholder="Bijv. 22 Rue de Sehen" style="width:100%; padding:12px; font-size:16px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px;" />
 
 <div id="addressSuggestions"></div>
 
-<div id="results" style="display:none;margin-top:30px;">
-  <h3>Resultaten voor: <span id="normalizedAddress" style="color:#000;"></span></h3>
-  
-  <div id="arcepOutput" style="margin-bottom:20px;"></div>
+<div id="results" style="display:none; margin-top:30px;">
+  <div id="arcepOutput" style="margin-bottom:30px;"></div>
 
-  <h3>Aanbieders</h3>
-  <div id="techCards"></div>
-
-  <h3>TV</h3>
-  <ul id="tvList"></ul>
-
-  <h3>VPN</h3>
-  <ul id="vpnList"></ul>
+  <div id="adviceSection"></div>
 </div>
 
+<div id="stickyContainer"></div>
+
 <footer>
-  Infofrankrijk.com en Nederlanders.fr.
+  Mogelijk gemaakt door Infofrankrijk.com en Nederlanders.fr
 </footer>
 
 <script src="script.js"></script>
