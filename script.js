@@ -84,40 +84,31 @@ async function selectAddress(feature) {
 // ------------------------------------------------------------
 async function fetchArcepData(address) {
   const out = document.getElementById("arcepBlock");
-  out.innerHTML = "Bezig met controleren...";
+  out.innerHTML = "Bezig met controleren bij ARCEP...";
 
   try {
-    // RELATIEF PAD - vercel.json regelt de rest
+    // Relatief pad, vercel.json regelt de routing
     const url = `/api/arcep?address=${encodeURIComponent(address)}`;
     
     const res = await fetch(url);
-    
-    // Check of we JSON krijgen (geen HTML error)
-    const contentType = res.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
-       throw new Error("Server gaf geen JSON (HTML Error)");
-    }
-
     const data = await res.json();
 
     if (!data.ok) {
-      out.innerHTML =
-        "<p>Geen ARCEP-gegevens beschikbaar. Algemene opties worden getoond.</p>";
+      out.innerHTML = `<p style="color:red">Fout: ${data.error || "Geen data"}</p>`;
       renderResults(null);
       return;
     }
 
     out.innerHTML = `
-      <p><strong>ARCEP-resultaten</strong></p>
-      <p>Glasvezel: ${data.fibre ? "Ja" : "Nee"}</p>
-      <p>DSL: ${data.dsl ? "Ja" : "Nee"}</p>
+      <p><strong>Resultaten voor ${data.address_found}</strong></p>
+      <p>Glasvezel (Gemeente): ${data.fibre ? "Ja" : "Nee"}</p>
+      <p>DSL (Gemeente): ${data.dsl ? "Ja" : "Nee"}</p>
     `;
 
     renderResults(data);
   } catch (e) {
     console.error(e);
-    out.innerHTML =
-      "<p>Fout bij ophalen ARCEP-data (Technische fout). Algemene opties worden getoond.</p>";
+    out.innerHTML = "<p>Kon geen verbinding maken met de server.</p>";
     renderResults(null);
   }
 }
@@ -128,6 +119,7 @@ async function fetchArcepData(address) {
 function renderResults(arcep) {
   const container = document.getElementById("techCards");
   const internet = providersData?.internet || {};
+  
   const listLinks = (arr) => {
     if (!arr) return "";
     return arr
@@ -143,14 +135,18 @@ function renderResults(arcep) {
       ? "✔ Glasvezel beschikbaar"
       : "✘ Geen glasvezel"
     : "Onbekend";
-  const mobileStatus = arcep
-    ? `
-      Orange: ${arcep.mobile.orange || "?"}<br>
-      SFR: ${arcep.mobile.sfr || "?"}<br>
-      Bouygues: ${arcep.mobile.bouygues || "?"}<br>
-      Free: ${arcep.mobile.free || "?"}
-    `
-    : "Onbekend";
+    
+  // Mobiele status bouwen
+  let mobileStatus = "Onbekend";
+  if (arcep && arcep.mobile) {
+      mobileStatus = `
+        Orange: ${arcep.mobile.orange || "?"}<br>
+        SFR: ${arcep.mobile.sfr || "?"}<br>
+        Bouygues: ${arcep.mobile.bouygues || "?"}<br>
+        Free: ${arcep.mobile.free || "?"}
+      `;
+  }
+
   container.innerHTML = `
     <div class="tech-card">
       <span class="pill">Fibre</span>
