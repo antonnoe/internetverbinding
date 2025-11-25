@@ -1,5 +1,5 @@
 // script.js
-// De Slimme Wegwijzer logica
+// De Slimme Wegwijzer logica (Maximum Zoom)
 
 let providersData = null;
 async function loadProviders() {
@@ -67,18 +67,17 @@ function startGuideFlow(lat, lon) {
     // Reset
     techCards.innerHTML = "";
     
-    // Genereer de diepe link naar de officiële kaart
-    // Zoom level 18 is straatniveau, techno=filaire toont glasvezel/koper
-    const officialUrl = `https://maconnexioninternet.arcep.fr/?lat=${lat}&lng=${lon}&zoom=18&mode=debit&techno=filaire`;
+    // ZOOM LEVEL AANGEPAST NAAR 20 (MAXIMAAL)
+    const officialUrl = `https://maconnexioninternet.arcep.fr/?lat=${lat}&lng=${lon}&zoom=20&mode=debit&techno=filaire`;
 
     output.innerHTML = `
         <div style="background:#f8f9fa; border:1px solid #ddd; padding:20px; border-radius:8px; text-align:center;">
             <h3 style="margin-top:0; color:#800000;">Stap 1: Check de kaart</h3>
-            <p>Omdat de database voor uw regio complex is, kijken we direct op de kaart van de toezichthouder.</p>
+            <p>De publieke database loopt soms achter. Kijk daarom direct op de officiële kaart van de toezichthouder.</p>
             
             <a href="${officialUrl}" target="_blank" 
                style="display:inline-block; background:#800000; color:white; padding:12px 20px; text-decoration:none; border-radius:6px; font-weight:bold; font-size:16px; margin-bottom:15px;">
-               📍 Klik hier om de kaart te openen
+               📍 Open Kaart (Max Zoom)
             </a>
             
             <p style="font-weight:bold; margin-top:15px;">Welke kleur stip ziet u op uw huis?</p>
