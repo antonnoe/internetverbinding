@@ -1,5 +1,5 @@
 // script.js
-// De Slimme Wegwijzer - Finale Instructies
+// De Slimme Wegwijzer met Sticky 'Afstandsbediening'
 
 let providersData = null;
 async function loadProviders() {
@@ -47,12 +47,14 @@ function renderSuggestions(features) {
 async function selectAddress(feature) {
   document.getElementById("addressSuggestions").style.display = "none";
   const label = feature.properties.label;
-  const coords = feature.geometry.coordinates; // [lon, lat]
+  const coords = feature.geometry.coordinates; 
   
   document.getElementById("addressInput").value = label;
-  document.getElementById("normalizedAddress").textContent = label;
   
+  // Reset UI
   document.getElementById("results").style.display = "block";
+  document.getElementById("adviceSection").innerHTML = ""; 
+  document.getElementById("stickyContainer").innerHTML = ""; // Reset balk
   
   startGuideFlow(coords[1], coords[0]);
 }
@@ -60,115 +62,145 @@ async function selectAddress(feature) {
 // --- DE GIDS FLOW ---
 function startGuideFlow(lat, lon) {
     const output = document.getElementById("arcepOutput");
-    const techCards = document.getElementById("techCards");
     
-    techCards.innerHTML = "";
-    
-    // We linken naar de kaart op maximaal zoomniveau
+    // Link naar kaart (max zoom 20)
     const officialUrl = `https://maconnexioninternet.arcep.fr/?lat=${lat}&lng=${lon}&zoom=20&mode=debit&techno=filaire`;
 
+    // 1. Toon instructie in het scherm
     output.innerHTML = `
         <div style="background:#f0f7ff; border:1px solid #cce5ff; padding:20px; border-radius:8px; text-align:center;">
-            <h3 style="margin-top:0; color:#004085;">Stap 1: Controleer uw aansluiting</h3>
-            <p style="margin-bottom:20px; color:#004085;">
-                De database voor uw regio is complex. We openen de officiële kaart <strong>exact op uw dak</strong>.
-                <br>Klik daar op het bolletje op uw huis om uw status te zien.
+            <h3 style="margin-top:0; color:#004085;">Stap 1: Open de Kaart</h3>
+            <p style="margin-bottom:20px; color:#555;">
+                De knop hieronder opent de officiële kaart precies op uw dak.<br>
+                Kijk welk bolletje er op uw huis staat.
             </p>
             
             <a href="${officialUrl}" target="_blank" 
-               style="display:inline-block; background:#0069d9; color:white; padding:14px 24px; text-decoration:none; border-radius:6px; font-weight:bold; font-size:18px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-               📍 Open de Kaart
+               style="display:inline-block; background:#800000; color:white; padding:14px 24px; text-decoration:none; border-radius:6px; font-weight:bold; font-size:18px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+               📍 Open Kaart op Arcep.fr
             </a>
             
-            <div style="margin-top:30px; border-top:1px solid #cce5ff; padding-top:20px;">
-                <p style="font-weight:bold;">Stap 2: Wat zag u op de kaart?</p>
-                <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-                    <button onclick="showResult('fibre')" style="padding:12px 20px; border:1px solid #28a745; background:white; color:#28a745; border-radius:6px; cursor:pointer; font-weight:bold; font-size:15px;">
-                        🟢 Groen puntje (Glasvezel)
-                    </button>
-                    <button onclick="showResult('dsl')" style="padding:12px 20px; border:1px solid #ffc107; background:white; color:#d39e00; border-radius:6px; cursor:pointer; font-weight:bold; font-size:15px;">
-                        🟡 Geel (Koper/DSL)
-                    </button>
-                    <button onclick="showResult('none')" style="padding:12px 20px; border:1px solid #6c757d; background:white; color:#6c757d; border-radius:6px; cursor:pointer; font-weight:bold; font-size:15px;">
-                        ⚪ Grijs / Geen puntje
-                    </button>
-                </div>
-            </div>
+            <p style="margin-top:15px; font-size:0.9em; color:#666;">
+                (Gebruik de knoppen onderaan het scherm om aan te geven wat u ziet)
+            </p>
+        </div>
+    `;
+
+    // 2. Toon de Sticky 'Afstandsbediening' onderaan
+    const sticky = document.getElementById("stickyContainer");
+    sticky.innerHTML = `
+        <div class="sticky-bottom-bar">
+            <div style="width:100%; font-size:12px; color:#666; margin-bottom:5px;">Wat ziet u op de kaart?</div>
+            <button class="sticky-btn" onclick="showResult('fibre')" style="border-color:#28a745; color:#28a745;">
+                🟢 Groen (Glasvezel)
+            </button>
+            <button class="sticky-btn" onclick="showResult('dsl')" style="border-color:#d39e00; color:#d39e00;">
+                🟡 Geel (Koper)
+            </button>
+            <button class="sticky-btn" onclick="showResult('none')" style="border-color:#6c757d; color:#6c757d;">
+                ⚪ Grijs / Niets
+            </button>
         </div>
     `;
 }
 
 // --- RENDER RESULTATEN ---
 function showResult(type) {
-    const container = document.getElementById("techCards");
+    // 1. Verwijder de sticky bar (hij heeft zijn werk gedaan)
+    document.getElementById("stickyContainer").innerHTML = "";
+
+    // 2. Toon resultaten
+    const container = document.getElementById("adviceSection");
     const internet = providersData?.internet || {};
-    const listLinks = (arr) => arr ? arr.map(p => `<a href="${p.url}" target="_blank" style="display:block; margin-bottom:4px;">${p.name}</a>`).join("") : "";
+    
+    const listLinks = (arr) => arr ? arr.map(p => `<a href="${p.url}" target="_blank" style="display:block; margin-bottom:4px; color:#0056b3; text-decoration:none;">${p.name} &rarr;</a>`).join("") : "";
+    const renderListItems = (arr) => arr ? arr.map(item => `<li><a href="${item.url}" target="_blank" style="color:#0056b3; text-decoration:none;">${item.name}</a></li>`).join("") : "";
 
-    let html = "";
-
+    let internetHTML = "";
+    
+    // SCENARIO: GLASVEZEL
     if (type === 'fibre') {
-        html = `
-            <div style="background:#d4edda; color:#155724; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #c3e6cb;">
-                <strong>✅ Gefeliciteerd!</strong> Er ligt Glasvezel tot in uw huis. <br>
-                U kunt abonnementen afsluiten tot 1 Gbit/s of hoger.
+        internetHTML = `
+            <div style="background:#d4edda; color:#155724; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #c3e6cb; margin-top:20px;">
+                <strong>✅ Goed nieuws!</strong> Er ligt Glasvezel. U heeft maximale snelheid.
             </div>
+            <h3>Aanbevolen Internet</h3>
             <div class="tech-card">
-                <span class="pill">Aanbevolen</span>
-                <h3>Glasvezel Providers</h3>
-                <p>Stabiel, snel en geschikt voor alles.</p>
+                <span class="pill">Fibre</span>
+                <h4 style="margin-top:5px;">Glasvezel Providers</h4>
+                <p style="font-size:0.9em;">Stabiel, snel en geschikt voor TV en thuiswerken.</p>
                 <div class="links-list">${listLinks(internet.fibre)}</div>
             </div>
         `;
-    } else if (type === 'dsl') {
-        html = `
-            <div style="background:#fff3cd; color:#856404; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #ffeeba;">
-                <strong>⚠️ Let op:</strong> U heeft waarschijnlijk een koperlijn (ADSL/VDSL). <br>
-                De snelheid hangt af van de afstand tot de centrale. Is het te traag? Overweeg Starlink.
+    } 
+    // SCENARIO: KOPER (DSL)
+    else if (type === 'dsl') {
+        internetHTML = `
+            <div style="background:#fff3cd; color:#856404; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #ffeeba; margin-top:20px;">
+                <strong>⚠️ Let op:</strong> U heeft waarschijnlijk een koperlijn (ADSL). Snelheid is beperkt.
             </div>
-            <div class="tech-card" style="opacity:0.9;">
-                <span class="pill">Optie A (Standaard)</span>
-                <h3>ADSL/VDSL</h3>
-                <p>Via de telefoonlijn.</p>
+            <h3>Uw Opties</h3>
+            <div class="tech-card">
+                <span class="pill">Optie A</span>
+                <h4 style="margin-top:5px;">ADSL/VDSL</h4>
                 <div class="links-list">${listLinks(internet.fibre)}</div>
             </div>
             <div class="tech-card">
                 <span class="pill">Optie B (Sneller)</span>
-                <h3>Starlink</h3>
-                <p>Hoge snelheid via satelliet.</p>
+                <h4 style="margin-top:5px;">Starlink</h4>
                 <div class="links-list">${listLinks(internet.leo)}</div>
             </div>
-            <div class="tech-card">
-                <span class="pill">Optie C</span>
-                <h3>4G Box</h3>
-                <p>Check bereik op uw telefoon.</p>
-                <div class="links-list">${listLinks(internet["4g5g"])}</div>
-            </div>
         `;
-    } else {
-        html = `
-            <div style="background:#f8d7da; color:#721c24; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #f5c6cb;">
-                <strong>❌ Buitengebied:</strong> Er lijkt geen vaste lijn geregistreerd op uw exacte locatie. <br>
-                Starlink is hier vaak de enige stabiele oplossing voor snel internet.
+    } 
+    // SCENARIO: NIETS (BUITENGEBIED)
+    else {
+        internetHTML = `
+            <div style="background:#f8d7da; color:#721c24; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #f5c6cb; margin-top:20px;">
+                <strong>❌ Buitengebied:</strong> Er is geen vaste lijn gevonden.
             </div>
+            <h3>Beste Oplossing</h3>
             <div class="tech-card">
-                <span class="pill" style="background:#006400;">Beste Keuze</span>
-                <h3>Starlink (Satelliet)</h3>
-                <p>Werkt overal in Frankrijk, hoge snelheid.</p>
+                <span class="pill" style="background:#006400;">Aanbevolen</span>
+                <h4 style="margin-top:5px;">Starlink (Satelliet)</h4>
+                <p style="font-size:0.9em;">Werkt overal, hoge snelheid.</p>
                 <div class="links-list">${listLinks(internet.leo)}</div>
             </div>
             <div class="tech-card">
                 <span class="pill">Alternatief</span>
-                <h3>4G/5G Box</h3>
-                <p>Alleen als u goed mobiel bereik heeft.</p>
+                <h4 style="margin-top:5px;">4G/5G Box</h4>
                 <div class="links-list">${listLinks(internet["4g5g"])}</div>
             </div>
         `;
     }
 
-    container.innerHTML = html;
+    // TV & VPN
+    const tvItems = renderListItems(providersData?.tv?.nl);
+    const vpnItems = renderListItems(providersData?.vpn);
+
+    let extrasHTML = "";
+    if (tvItems) {
+        extrasHTML += `
+            <h3>Televisie (NL)</h3>
+            <div class="tech-card">
+                <ul>${tvItems}</ul>
+            </div>
+        `;
+    }
+    if (vpnItems) {
+        extrasHTML += `
+            <h3>Veiligheid & VPN</h3>
+            <div class="tech-card">
+                <p style="font-size:0.9em; color:#666; margin-top:0;">Handig voor Nederlandse TV en veilig bankieren.</p>
+                <ul>${vpnItems}</ul>
+            </div>
+        `;
+    }
+
+    container.innerHTML = internetHTML + extrasHTML;
     
-    const tv = providersData?.tv?.nl || [];
-    document.getElementById("tvList").innerHTML = tv.map(t => `<li>${t.name} (<a href="${t.url}" target="_blank">link</a>)</li>`).join("");
-    const vpn = providersData?.vpn || [];
-    document.getElementById("vpnList").innerHTML = vpn.map(v => `<li>${v.name} – ${v.type} (<a href="${v.url}" target="_blank">site</a>)</li>`).join("");
+    // Scroll naar resultaat
+    // We gebruiken een kleine timeout om zeker te zijn dat de sticky bar weg is en de layout herberekend is
+    setTimeout(() => {
+        container.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
 }
