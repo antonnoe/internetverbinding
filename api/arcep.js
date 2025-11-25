@@ -1,96 +1,98 @@
-// api/arcep.js
-// Zorg ervoor dat je 'node-fetch' hebt geïnstalleerd als dev dependency
-import fetch from 'node-fetch';
+export default async function handler(req, res) {
+  // 1. CORS en Headers instellen (belangrijk voor browser toegang)
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
 
-// De Vercel handler function
-export default async (req, res) => {
-  // Standaard headers instellen
-  res.setHeader('Content-Type', 'application/json');
-  res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate');
+  // Behandel OPTIONS request (preflight check van browser)
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
 
   const { address } = req.query;
 
   if (!address) {
-    return res.status(400).json({ ok: false, error: 'Missing address query parameter.' });
+    return res.status(400).json({ ok: false, error: "Geen adres opgegeven." });
   }
 
-  let coordinates;
-
-  // STAP 1: ADRES NAAR COÖRDINATEN (BAN API)
   try {
+    // STAP A: Zoek coördinaten via BAN (Franse overheids API)
+    // We gebruiken de globale 'fetch', geen import nodig!
     const banUrl = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(address)}&limit=1`;
     const banRes = await fetch(banUrl);
-    
-    if (!banRes.ok) {
-        // Externe API gaf een foutstatus terug
-        return res.status(502).json({ 
-            ok: false, 
-            error: `BAN lookup failed with status: ${banRes.status}.` 
-        });
-    }
-
     const banData = await banRes.json();
 
     if (!banData.features || banData.features.length === 0) {
-      return res.status(200).json({ ok: false, error: 'Address not found by BAN API.' });
+      return res.status(404).json({ ok: false, error: "Adres niet gevonden in BAN." });
     }
 
-    coordinates = banData.features[0].geometry.coordinates;
-  } catch (e) {
-    // Dit vangt de "Unexpected token <" als de BAN API faalt
-    return res.status(500).json({ 
-      ok: false, 
-      error: `Error tijdens adres lookup. Externe API gaf geen JSON. Fout: ${e.message}` 
-    });
-  }
+    const feature = banData.features[0];
+    const [lon, lat] = feature.geometry.coordinates;
+    const insee = feature.properties.citycode;
 
-  // STAP 2: COÖRDINATEN NAAR ARCEP DATA (OpenDataSoft)
-  const [lon, lat] = coordinates;
-  // Let op: 'geom' gebruikt (lat, lon) in de query. We zoeken binnen 1000m.
-  const arcepUrl = `https://couverture-mobile-arcep.opendatasoft.com/api/explore/v2.1/catalog/datasets/couverture_mobile_4g_3g_2g_communes_et_adresses/records?where=within_distance(geopoint%2C%20geom%28${lat}%2C%20${lon}%29%2C%20'1000m')&limit=1`;
-  
-  try {
-    const arcepRes = await fetch(arcepUrl);
+    // STAP B: Haal data op bij ARCEP (OpenDataSoft)
+    // We zoeken op INSEE code, dat is het meest betrouwbaar
     
-    if (!arcepRes.ok) {
-        // Externe API gaf een foutstatus terug
-        return res.status(502).json({ 
-            ok: false, 
-            error: `ARCEP data fetch failed with status: ${arcepRes.status}.` 
+    // 1. Vaste verbinding (Fibre/DSL)
+    const fixedUrl = `https://data.arcep.fr/api/explore/v2.1/catalog/datasets/maconnexioninternet/records?where=code_insee="${insee}"&limit=100`;
+    const fixedRes = await fetch(fixedUrl);
+    const fixedData = await fixedRes.json();
+
+    // 2. Mobiele dekking
+    const mobileUrl = `https://data.arcep.fr/api/explore/v2.1/catalog/datasets/monreseaumobile/records?where=code_insee="${insee}"&limit=100`;
+    const mobileRes = await fetch(mobileUrl);
+    const mobileData = await mobileRes.json();
+
+    // STAP C: Data verwerken (simpele logica)
+    let hasFibre = false;
+    let hasDsl = false;
+    let mobileCoverage = { orange: null, sfr: null, bouygues: null, free: null };
+
+    // Check vast internet
+    if (fixedData.results) {
+        // Simpele check: is er ergens in deze gemeente fibre gemeld?
+        // Voor exact adres zou je moeten filteren op hexacle_cle, maar dit is een goede eerste stap.
+        const fibreRecord = fixedData.results.find(r => r.techno === 'FttH' && r.elig === true);
+        if (fibreRecord) hasFibre = true;
+
+        const dslRecord = fixedData.results.find(r => (r.techno === 'ADSL' || r.techno === 'VDSL2') && r.elig === true);
+        if (dslRecord) hasDsl = true;
+    }
+
+    // Check mobiel (pak de eerste hit voor deze gemeente als indicatie)
+    if (mobileData.results && mobileData.results.length > 0) {
+        // We proberen een gemiddeld beeld te krijgen
+        mobileData.results.forEach(record => {
+            const op = (record.operateur || '').toLowerCase();
+            // Sla dekking op als we die nog niet hebben voor deze operator
+            if (op && !mobileCoverage[op] && (record.couverture_4g || record.couverture_5g)) {
+                mobileCoverage[op] = record.couverture_4g || "Beschikbaar";
+            }
         });
     }
 
-    // Dit is de plek waar het misging: de .json() call
-    const arcepData = await arcepRes.json(); 
-
-    if (!arcepData.results || arcepData.results.length === 0) {
-        return res.status(200).json({ ok: false, error: 'No ARCEP data found nearby.' });
-    }
-
-    const record = arcepData.results[0];
-
-    // STAP 3: RESULTAAT FORMEREN
+    // STAP D: Antwoord sturen
     return res.status(200).json({
       ok: true,
-      address,
-      latitude: lat,
-      longitude: lon,
-      // Veldnamen aannemen uit OpenDataSoft API
-      fibre: record.fibre_eligibilite === 'Oui', 
-      dsl: record.dsl_eligibilite === 'Oui',     
-      mobile: {
-        orange: record.couverture_4g_orange,
-        sfr: record.couverture_4g_sfr,
-        bouygues: record.couverture_4g_bouygues_telecom,
-        free: record.couverture_4g_free_mobile,
-      }
+      debug_info: { lat, lon, insee },
+      address_found: feature.properties.label,
+      fibre: hasFibre,
+      dsl: hasDsl,
+      mobile: mobileCoverage
     });
 
-  } catch (e) {
-    // Dit vangt de "Unexpected token <" die je eerder zag
+  } catch (error) {
+    console.error("API Error:", error);
+    // Stuur JSON terug, zelfs bij een error, zodat de frontend niet chooked op HTML
     return res.status(500).json({ 
-      ok: false, 
-      error: `Interne ARCEP fetch fout: ${e.message}. Heeft de externe API HTML teruggestuurd?` 
+        ok: false, 
+        error: "Server fout bij ophalen data.", 
+        details: error.message 
     });
   }
-};
+}
