@@ -33,7 +33,7 @@ export default async function handler(req, res) {
     
     // Syntax: within_distance(geo_veld, geom'POINT(lon lat)', afstand)
     // We gebruiken 'geopoint' als standaard veldnaam voor ODS
-    const geoQuery = `within_distance(geopoint, geom'POINT(${lon} ${lat})', 200m)`;
+    const geoQuery = `within_distance(geopoint, geom'POINT(${lon} ${lat})', 1000m)`;
     const whereClause = encodeURIComponent(geoQuery);
     
     const fixedUrl = `${baseUrl}/maconnexioninternet/records?where=${whereClause}&limit=50`;
