@@ -1,95 +1,96 @@
-// BAN → INSEE → ARCEP fibre/dsl/mobile realtime
+// api/arcep.js
+// Zorg ervoor dat je 'node-fetch' hebt geïnstalleerd als dev dependency
+import fetch from 'node-fetch';
 
-export default async function handler(req, res) {
+// De Vercel handler function
+export default async (req, res) => {
+  // Standaard headers instellen
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate');
+
+  const { address } = req.query;
+
+  if (!address) {
+    return res.status(400).json({ ok: false, error: 'Missing address query parameter.' });
+  }
+
+  let coordinates;
+
+  // STAP 1: ADRES NAAR COÖRDINATEN (BAN API)
   try {
-    const address = req.query.address;
-    if (!address) {
-      return res.status(400).json({ ok: false, error: "Missing ?address=" });
+    const banUrl = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(address)}&limit=1`;
+    const banRes = await fetch(banUrl);
+    
+    if (!banRes.ok) {
+        // Externe API gaf een foutstatus terug
+        return res.status(502).json({ 
+            ok: false, 
+            error: `BAN lookup failed with status: ${banRes.status}.` 
+        });
     }
 
-    // 1) BAN LOOKUP
-    const banRes = await fetch(
-      "https://api-adresse.data.gouv.fr/search/?q=" +
-        encodeURIComponent(address) +
-        "&limit=1"
-    );
-    const ban = await banRes.json();
+    const banData = await banRes.json();
 
-    if (!ban.features || ban.features.length === 0) {
-      return res.status(200).json({ ok: false, error: "BAN_NOT_FOUND" });
+    if (!banData.features || banData.features.length === 0) {
+      return res.status(200).json({ ok: false, error: 'Address not found by BAN API.' });
     }
 
-    const f = ban.features[0];
-    const insee = f.properties.citycode;
-    const postcode = f.properties.postcode;
-    const lon = f.geometry.coordinates[0];
-    const lat = f.geometry.coordinates[1];
+    coordinates = banData.features[0].geometry.coordinates;
+  } catch (e) {
+    // Dit vangt de "Unexpected token <" als de BAN API faalt
+    return res.status(500).json({ 
+      ok: false, 
+      error: `Error tijdens adres lookup. Externe API gaf geen JSON. Fout: ${e.message}` 
+    });
+  }
 
-    // 2) ARCEP FIXED (fibre/dsl)
-    const fibreUrl =
-      `https://data.arcep.fr/api/explore/v2.1/catalog/datasets/maconnexioninternet/records` +
-      `?where=code_insee=%27${insee}%27&limit=200`;
-
-    const fibreRes = await fetch(fibreUrl);
-    const fibreData = await fibreRes.json();
-
-    let fibre = false;
-    let fibreOperators = [];
-    let dsl = false;
-
-    if (fibreData?.results?.length) {
-      fibreData.results.forEach((row) => {
-        if (row.techno === "FttH" && row.elig === true) {
-          fibre = true;
-          if (row.operateur) fibreOperators.push(row.operateur);
-        }
-
-        if (
-          (row.techno === "ADSL" || row.techno === "VDSL2") &&
-          row.elig === true
-        ) {
-          dsl = true;
-        }
-      });
+  // STAP 2: COÖRDINATEN NAAR ARCEP DATA (OpenDataSoft)
+  const [lon, lat] = coordinates;
+  // Let op: 'geom' gebruikt (lat, lon) in de query. We zoeken binnen 1000m.
+  const arcepUrl = `https://couverture-mobile-arcep.opendatasoft.com/api/explore/v2.1/catalog/datasets/couverture_mobile_4g_3g_2g_communes_et_adresses/records?where=within_distance(geopoint%2C%20geom%28${lat}%2C%20${lon}%29%2C%20'1000m')&limit=1`;
+  
+  try {
+    const arcepRes = await fetch(arcepUrl);
+    
+    if (!arcepRes.ok) {
+        // Externe API gaf een foutstatus terug
+        return res.status(502).json({ 
+            ok: false, 
+            error: `ARCEP data fetch failed with status: ${arcepRes.status}.` 
+        });
     }
 
-    fibreOperators = [...new Set(fibreOperators)];
+    // Dit is de plek waar het misging: de .json() call
+    const arcepData = await arcepRes.json(); 
 
-    // 3) ARCEP MOBILE
-    const mobileUrl =
-      `https://data.arcep.fr/api/explore/v2.1/catalog/datasets/monreseaumobile/records` +
-      `?where=code_insee=%27${insee}%27&limit=200`;
-
-    const mobileRes = await fetch(mobileUrl);
-    const mobileData = await mobileRes.json();
-
-    let mobile = { orange: null, sfr: null, bouygues: null, free: null };
-
-    if (mobileData?.results?.length) {
-      mobileData.results.forEach((row) => {
-        const op = (row.operateur || "").toLowerCase();
-        const cov = row.couverture_4g || row.couverture;
-
-        if (mobile[op] !== undefined) {
-          mobile[op] = cov || null;
-        }
-      });
+    if (!arcepData.results || arcepData.results.length === 0) {
+        return res.status(200).json({ ok: false, error: 'No ARCEP data found nearby.' });
     }
 
-    // RESPONSE
+    const record = arcepData.results[0];
+
+    // STAP 3: RESULTAAT FORMEREN
     return res.status(200).json({
       ok: true,
-      address: f.properties.label,
-      lat,
-      lon,
-      insee,
-      postcode,
-      fibre,
-      fibre_operators: fibreOperators,
-      dsl,
-      mobile
+      address,
+      latitude: lat,
+      longitude: lon,
+      // Veldnamen aannemen uit OpenDataSoft API
+      fibre: record.fibre_eligibilite === 'Oui', 
+      dsl: record.dsl_eligibilite === 'Oui',     
+      mobile: {
+        orange: record.couverture_4g_orange,
+        sfr: record.couverture_4g_sfr,
+        bouygues: record.couverture_4g_bouygues_telecom,
+        free: record.couverture_4g_free_mobile,
+      }
     });
+
   } catch (e) {
-    return res.status(500).json({ ok: false, error: e.message });
+    // Dit vangt de "Unexpected token <" die je eerder zag
+    return res.status(500).json({ 
+      ok: false, 
+      error: `Interne ARCEP fetch fout: ${e.message}. Heeft de externe API HTML teruggestuurd?` 
+    });
   }
-}
+};
