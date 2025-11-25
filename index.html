@@ -6,7 +6,8 @@
 <title>Internetverbinding – Dataverbinding Frankrijk</title>
 <style>
     /* --- BASIS STIJL --- */
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f4f4f9; color: #333; max-width: 800px; margin: 0 auto; padding-bottom: 100px; }
+    /* AANGEPAST: Padding-bottom verlaagd van 100px naar 20px om grijs vlak te verwijderen */
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f4f4f9; color: #333; max-width: 800px; margin: 0 auto; }
     h1 { color: #800000; margin-bottom: 5px; }
     h3 { color: #666; margin-top: 0; font-weight: normal; font-size: 1.1em; }
     
@@ -52,23 +53,18 @@
     .btn-none { border-color: #6c757d; color: #6c757d; } .btn-none:hover { background: #6c757d; color: white; }
 
     /* --- TABEL STIJL --- */
-    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-top: 10px; }
-    th { background: #f1f1f1; color: #555; font-weight: 600; text-align: left; padding: 12px; font-size: 13px; text-transform: uppercase; border-bottom: 2px solid #ddd; }
-    td { padding: 12px; border-bottom: 1px solid #eee; vertical-align: middle; }
+    /* Overbodige tabelstijlen verwijderd voor schonere code, we gebruiken nu cards */
     
     .provider-name { font-weight: bold; color: #333; display: block; margin-bottom: 4px; text-decoration: none; }
     .provider-name:hover { text-decoration: underline; color: #0056b3; }
-    .speed-tag { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: white; text-align: center; min-width: 80px; }
-    
-    .bg-blue { background-color: #5c6bc0; }
-    .bg-cyan { background-color: #26c6da; }
-    .bg-green { background-color: #66bb6a; }
     
     .tech-header { margin-top: 40px; margin-bottom: 15px; font-size: 18px; color: #800000; border-bottom: 2px solid #800000; display: inline-block; padding-bottom: 5px; }
 
-    /* --- LINKJES ONDERAAN --- */
-    .btn-link { color: #0056b3; font-size: 14px; text-decoration: none; } 
-    .btn-link:hover { text-decoration: underline; }
+    /* --- ADVIES KAARTEN --- */
+    .tech-card { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #eee; }
+    .pill { display: inline-block; padding: 4px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; color: white; background: #800000; }
+    .links-list a { display: block; color: #0056b3; text-decoration: none; padding: 5px 0; border-bottom: 1px dotted #eee; }
+    .links-list a:hover { text-decoration: underline; color: #003d82; }
 
     footer { margin-top: 60px; text-align: center; font-size: 12px; color: #999; border-top: 1px solid #eee; padding-top: 20px; }
 </style>
@@ -80,7 +76,7 @@
     <p>Vul uw adres in. Wij openen de officiële kaart. Wat u daar ziet, vertalen wij hier naar een duidelijk overzicht.</p>
 
     <div class="input-container">
-        <input id="addressInput" type="text" placeholder="Bijv. 22 Rue de Sehen, Montcavrel" autocomplete="off">
+        <input id="addressInput" type="text" placeholder="Bijv. 12 Quai de la Somme Amiens" autocomplete="off">
         <div id="addressSuggestions"></div>
         <button class="reset-btn" onclick="resetTool()">🔄 Opnieuw zoeken</button>
     </div>
@@ -96,20 +92,24 @@
         // --- 1. HARDE DATA ---
         const providers = {
             fibre: [
-                { n: "Orange", u: "https://boutique.orange.fr/internet/offres-fibre" },
-                { n: "SFR", u: "https://www.sfr.fr/offre-internet.html" },
-                { n: "Bouygues", u: "https://www.bouyguestelecom.fr/offres-internet/fibre" },
-                { n: "Free", u: "https://www.free.fr/freebox/" }
+                { n: "Orange Fibre", u: "https://boutique.orange.fr/internet/offres-fibre" },
+                { n: "SFR Fibre", u: "https://www.sfr.fr/offre-internet.html" },
+                { n: "Bouygues Fibre", u: "https://www.bouyguestelecom.fr/offres-internet/fibre" },
+                { n: "Free Fibre", u: "https://www.free.fr/freebox/" }
             ],
             dsl: [
-                { n: "Orange", u: "https://boutique.orange.fr/internet" },
-                { n: "SFR", u: "https://www.sfr.fr/offre-internet.html" },
-                { n: "Bouygues", u: "https://www.bouyguestelecom.fr/offres-internet/adsl" },
-                { n: "Free", u: "https://www.free.fr/freebox/" }
+                { n: "Orange ADSL", u: "https://boutique.orange.fr/internet" },
+                { n: "SFR ADSL", u: "https://www.sfr.fr/offre-internet.html" },
+                { n: "Bouygues ADSL", u: "https://www.bouyguestelecom.fr/offres-internet/adsl" },
+                { n: "Free ADSL", u: "https://www.free.fr/freebox/" }
             ],
             starlink: { n: "Starlink", u: "https://www.starlink.com/" },
             nordnet: { n: "Nordnet", u: "https://www.nordnet.com/" },
-            box4g: { n: "4G/5G Box (Div)", u: "https://boutique.orange.fr/internet/offres-4g-home" }
+            // AANGEPAST: Orange link vervangen door overheidsinfo zoals gevraagd
+            box4g: [
+                { n: "Info 4G/5G (Overheid)", u: "https://www.economie.gouv.fr/le-deploiement-de-la-5g-bis" },
+                { n: "Bouygues 4G Box", u: "https://www.bouyguestelecom.fr/offres-internet/4g-box" }
+            ]
         };
 
         // --- 2. ZOEKFUNCTIE (BAN) ---
@@ -194,19 +194,8 @@
             const container = document.getElementById('finalAdvice');
             
             // Helper functies
-            const row = (prov, dl, ul) => `
-                <tr>
-                    <td><a href="${prov.u}" target="_blank" class="provider-name">${prov.n} &rarr;</a></td>
-                    <td><span class="speed-tag ${getColor(dl)}">${dl}</span></td>
-                    <td><span class="speed-tag ${getColor(ul)}">${ul}</span></td>
-                </tr>`;
-
-            const getColor = (txt) => {
-                if(txt.includes('Gbit') || txt.includes('100 Mbit')) return 'bg-blue';
-                if(txt.includes('30 Mbit')) return 'bg-cyan';
-                return 'bg-green';
-            };
-
+            const makeLinks = (list) => list.map(i => `<a href="${i.u}" target="_blank">${i.n} &rarr;</a>`).join('');
+            
             let html = '';
 
             // --- SCENARIO 1: FIBRE (Blauw/Paars bolletje) ---
@@ -215,14 +204,12 @@
                     <div style="padding:15px; background:#e8eaf6; border-radius:8px; color:#283593; margin:20px 0; border:1px solid #c5cae9;">
                         <strong>✅ Glasvezel Beschikbaar!</strong><br>Hieronder de maximale snelheden op uw adres.
                     </div>
-                    <div class="tech-header">Fibre (Glasvezel)</div>
-                    <table>
-                        <thead><tr><th>Provider</th><th>Download</th><th>Upload</th></tr></thead>
-                        <tbody>
-                            ${providers.fibre.map(p => row(p, "1 Gbit/s +", "500 Mbit/s +")).join('')}
-                        </tbody>
-                    </table>
-                    <div style="font-size:12px; color:#666;">* Snelheden zijn theoretische maxima.</div>
+                    <div class="tech-card">
+                        <span class="pill">Aanbevolen</span>
+                        <h3>Glasvezel Providers</h3>
+                        <p>Stabiel, snel en geschikt voor TV, werken en gamen.</p>
+                        <div class="links-list">${makeLinks(providers.fibre)}</div>
+                    </div>
                 `;
             }
             
@@ -234,22 +221,18 @@
                         <br>Kijk hieronder naar alternatieven zoals 4G of Starlink.
                     </div>
 
-                    <div class="tech-header">DSL (Koperlijn)</div>
-                    <table>
-                        <thead><tr><th>Provider</th><th>Download</th><th>Upload</th></tr></thead>
-                        <tbody>
-                            ${providers.dsl.map(p => row(p, "ca. 15 Mbit/s", "1 Mbit/s")).join('')}
-                        </tbody>
-                    </table>
+                    <div class="tech-card">
+                        <span class="pill">Standaard</span>
+                        <h3>ADSL/VDSL</h3>
+                        <p>Via de telefoonlijn. Snelheid afhankelijk van afstand.</p>
+                        <div class="links-list">${makeLinks(providers.dsl)}</div>
+                    </div>
 
-                    <div class="tech-header">Alternatieven (Sneller)</div>
-                    <table>
-                        <thead><tr><th>Technologie</th><th>Download</th><th>Upload</th></tr></thead>
-                        <tbody>
-                            ${row(providers.starlink, "100 Mbit/s +", "20 Mbit/s +")}
-                            ${row(providers.box4g, "tot 150 Mbit/s", "tot 50 Mbit/s")}
-                        </tbody>
-                    </table>
+                    <div class="tech-card">
+                        <span class="pill">Sneller Alternatief</span>
+                        <h3>Starlink</h3>
+                        <div class="links-list">${makeLinks(providers.starlink)}</div>
+                    </div>
                 `;
             } 
             
@@ -261,31 +244,41 @@
                         <br>U bent aangewezen op Satelliet of 4G.
                     </div>
 
-                    <div class="tech-header">Satelliet & 4G</div>
-                    <table>
-                        <thead><tr><th>Provider</th><th>Download</th><th>Upload</th></tr></thead>
-                        <tbody>
-                            ${row(providers.starlink, "100 Mbit/s +", "20 Mbit/s +")}
-                            ${row(providers.nordnet, "tot 100 Mbit/s", "5 Mbit/s")}
-                            ${row(providers.box4g, "Afhankelijk van 4G", "Variabel")}
-                        </tbody>
-                    </table>
+                    <div class="tech-card">
+                        <span class="pill" style="background:#006400;">Beste Oplossing</span>
+                        <h3>Starlink</h3>
+                        <div class="links-list">${makeLinks(providers.starlink)}</div>
+                    </div>
+
+                    <div class="tech-card">
+                        <span class="pill">Alternatief</span>
+                        <h3>4G Info</h3>
+                        <div class="links-list">${makeLinks(providers.box4g)}</div>
+                    </div>
                 `;
             }
 
             // TV & VPN
+            // Data handmatig opbouwen want providers_fr.json is weg
+            const tvList = [
+                {n: "NLZIET", u: "https://www.nlziet.nl/"},
+                {n: "Canal Digitaal", u: "https://www.canaldigitaal.nl/"}
+            ];
+            const vpnList = [
+                {n: "NordVPN", u: "https://nordvpn.com/"},
+                {n: "Surfshark", u: "https://surfshark.com/"}
+            ];
+
             html += `
                 <div class="tech-header" style="margin-top:40px; border-color:#666; color:#666;">Extra Diensten</div>
                 <div style="display:flex; gap:20px; flex-wrap:wrap;">
                     <div style="flex:1; min-width:250px; background:white; padding:15px; border:1px solid #eee; border-radius:8px;">
                         <strong>📺 Nederlandse TV</strong><br>
-                        <a href="https://www.nlziet.nl/" target="_blank" class="btn-link">NLZIET &rarr;</a><br>
-                        <a href="https://www.canaldigitaal.nl/" target="_blank" class="btn-link">Canal Digitaal &rarr;</a>
+                        ${makeLinks(tvList)}
                     </div>
                     <div style="flex:1; min-width:250px; background:white; padding:15px; border:1px solid #eee; border-radius:8px;">
                         <strong>🔒 Veiligheid & VPN</strong><br>
-                        <a href="https://nordvpn.com/" target="_blank" class="btn-link">NordVPN &rarr;</a><br>
-                        <a href="https://surfshark.com/" target="_blank" class="btn-link">Surfshark &rarr;</a>
+                        ${makeLinks(vpnList)}
                     </div>
                 </div>
             `;
