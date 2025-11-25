@@ -98,7 +98,7 @@ async function fetchArcepData(address) {
 
     if (!data.ok) {
       out.innerHTML =
-        "<p>Geen ARCEP-gegevens. We tonen algemene opties.</p>";
+        "<p>Geen ARCEP-gegevens beschikbaar. Algemene opties worden getoond.</p>";
       renderResults(null);
       return;
     }
@@ -106,7 +106,7 @@ async function fetchArcepData(address) {
     renderResults(data);
   } catch (e) {
     out.innerHTML =
-      "<p>Fout bij ophalen ARCEP-data. Algemene info wordt getoond.</p>";
+      "<p>Fout bij ophalen ARCEP-data. Algemene opties worden getoond.</p>";
     renderResults(null);
   }
 }
