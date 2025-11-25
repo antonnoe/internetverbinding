@@ -1,5 +1,9 @@
 // api/arcep.js
+// Backend: BAN -> INSEE -> ARCEP (Fixed + Mobile)
+// Versie: Single Quote Fix + URL Object
+
 export default async function handler(req, res) {
+  // Headers voor browser toegang
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Content-Type', 'application/json');
 
@@ -10,8 +14,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. BAN: Adres -> INSEE
-    // We gebruiken encodeURIComponent voor veiligheid
+    // ---------------------------------------------------------
+    // STAP 1: BAN Lookup (Adres naar INSEE)
+    // ---------------------------------------------------------
     const banUrl = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(address)}&limit=1`;
     const banRes = await fetch(banUrl);
     
@@ -22,37 +27,55 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: false, error: "Adres onbekend in BAN." });
     }
 
-    const feature = banData.features[0];
-    const insee = feature.properties.citycode;
-    const label = feature.properties.label;
-    const [lon, lat] = feature.geometry.coordinates;
+    const f = banData.features[0];
+    const insee = f.properties.citycode;
+    const label = f.properties.label;
+    const [lon, lat] = f.geometry.coordinates;
 
-    // 2. ARCEP: Data ophalen
-    // BELANGRIJK: De query parameter MOET encoded zijn voor Node.js fetch
-    const whereQuery = encodeURIComponent(`code_insee="${insee}"`);
+    // ---------------------------------------------------------
+    // STAP 2: ARCEP Data Ophalen
+    // ---------------------------------------------------------
+    // We gebruiken de URL class om fouten met leestekens te voorkomen
+    const baseUrl = "https://data.arcep.fr/api/explore/v2.1/catalog/datasets";
     
-    const fixedUrl = `https://data.arcep.fr/api/explore/v2.1/catalog/datasets/maconnexioninternet/records?where=${whereQuery}&limit=50`;
-    const mobileUrl = `https://data.arcep.fr/api/explore/v2.1/catalog/datasets/monreseaumobile/records?where=${whereQuery}&limit=50`;
+    // Functie om URL te bouwen met de JUISTE (enkele) quotes
+    const createArcepUrl = (dataset) => {
+        const url = new URL(`${baseUrl}/${dataset}/records`);
+        // LET OP: ARCEP vereist enkele quotes rondom de waarde!
+        // code_insee='12345'
+        url.searchParams.append("where", `code_insee='${insee}'`);
+        url.searchParams.append("limit", "50");
+        return url.toString();
+    };
 
-    // We voeren de requests parallel uit voor snelheid
+    const fixedUrl = createArcepUrl("maconnexioninternet");
+    const mobileUrl = createArcepUrl("monreseaumobile");
+
+    // Parallel ophalen
     const [fixedRes, mobileRes] = await Promise.all([
         fetch(fixedUrl),
         fetch(mobileUrl)
     ]);
 
-    // Check op netwerkfouten
-    if (!fixedRes.ok) throw new Error(`ARCEP Fixed API Fout: ${fixedRes.status}`);
-    if (!mobileRes.ok) throw new Error(`ARCEP Mobile API Fout: ${mobileRes.status}`);
-
+    // We checken niet direct op !ok, maar lezen de JSON. 
+    // Soms geeft OpenDataSoft een error in JSON formaat terug.
     const fixedData = await fixedRes.json();
     const mobileData = await mobileRes.json();
 
-    // 3. Verwerking
+    // Check of de requests daadwerkelijk data bevatten of een foutcode
+    if (fixedData.error_code || mobileData.error_code) {
+        console.error("ARCEP API Fout:", fixedData, mobileData);
+        // We gooien geen error, maar gaan door (graceful degradation)
+    }
+
+    // ---------------------------------------------------------
+    // STAP 3: Data Verwerken
+    // ---------------------------------------------------------
     let hasFibre = false;
     let hasDsl = false;
     let mobile = { orange: null, sfr: null, bouygues: null, free: null };
 
-    // Analyseer vast internet
+    // Vast internet (Fibre/DSL)
     if (fixedData.results) {
         const fibreRec = fixedData.results.find(r => r.techno === 'FttH' && (r.elig === true || r.elig === '1'));
         if (fibreRec) hasFibre = true;
@@ -61,16 +84,20 @@ export default async function handler(req, res) {
         if (dslRec) hasDsl = true;
     }
 
-    // Analyseer mobiel
+    // Mobiel internet
     if (mobileData.results) {
         mobileData.results.forEach(r => {
             const op = (r.operateur || '').toLowerCase();
+            // Pak dekking als we die nog niet hebben
             if (op && !mobile[op]) {
                 mobile[op] = r.couverture_4g || r.couverture || "Beschikbaar";
             }
         });
     }
 
+    // ---------------------------------------------------------
+    // STAP 4: Response
+    // ---------------------------------------------------------
     return res.status(200).json({
       ok: true,
       address_found: label,
@@ -78,15 +105,16 @@ export default async function handler(req, res) {
       insee: insee,
       fibre: hasFibre,
       dsl: hasDsl,
-      mobile: mobile
+      mobile: mobile,
+      // Debug info voor als het toch nog misgaat (kun je later weghalen)
+      debug_urls: { fixed: fixedUrl, mobile: mobileUrl }
     });
 
   } catch (error) {
-    console.error("Backend Error:", error);
-    // We sturen de details mee zodat je ze in de browser ziet
+    console.error("Backend Crash:", error);
     return res.status(500).json({ 
       ok: false, 
-      error: "Server fout bij verwerken data.",
+      error: "Technische fout in backend.", 
       details: error.message 
     });
   }
