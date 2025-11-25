@@ -1,101 +1,73 @@
 // api/arcep.js
-// Integratie van BAN + ARCEP ODS v2.1 (Copilot Logic)
-
-// HULPFUNCTIE: De robuuste query van Copilot
-async function queryArcepGeo(dataset, lat, lon, radiusMeters = 500, limit = 100) {
-  // Veilige where-clause opbouw
-  const whereClause = `within_distance(geopoint, geom'POINT(${lon} ${lat})', ${Math.round(radiusMeters)}m)`;
-
-  // URL bouwen met v2.1 endpoint
-  const url = new URL(`https://data.arcep.fr/api/v2.1/datasets/${encodeURIComponent(dataset)}/records`);
-  const params = new URLSearchParams();
-  params.set('where', whereClause);
-  params.set('limit', String(limit));
-  url.search = params.toString();
-
-  // Fetch met timeout en error handling
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), 15000); // 15 sec timeout
-
-  try {
-    const res = await fetch(url.toString(), {
-      method: 'GET',
-      headers: { 'Accept': 'application/json' },
-      signal: controller.signal
-    });
-
-    // Lees eerst als tekst om HTML errors te vangen
-    const text = await res.text();
-    const trimmed = text.trim();
-
-    if (!res.ok) {
-      throw new Error(`ARCEP API Fout (${res.status}): ${trimmed.slice(0, 200)}`);
-    }
-
-    // De beroemde check: is het HTML?
-    if (trimmed.startsWith('<')) {
-      throw new Error(`Verwachtte JSON, kreeg HTML (Server Fout bij ARCEP).`);
-    }
-
-    // Parse JSON
-    return JSON.parse(trimmed);
-
-  } finally {
-    clearTimeout(id);
-  }
-}
-
-// DE MAIN HANDLER (Vercel)
-export default async function handler(req, res) {
-  // Headers
+module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Content-Type', 'application/json');
 
   const { address } = req.query;
 
   if (!address) {
-    return res.status(400).json({ ok: false, error: "Geen adres opgegeven." });
+    return res.status(400).json({ ok: false, error: "Geen adres." });
   }
 
   try {
-    // ---------------------------------------------------------
-    // STAP 1: BAN Lookup (Adres naar GPS)
-    // ---------------------------------------------------------
+    // STAP 1: BAN Lookup
     const banRes = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(address)}&limit=1`);
     const banData = await banRes.json();
 
-    if (!banData.features || banData.features.length === 0) {
-      return res.status(200).json({ ok: false, error: "Adres onbekend in BAN." });
+    if (!banData.features?.length) {
+      return res.status(200).json({ ok: false, error: "Adres niet gevonden in BAN." });
     }
 
     const f = banData.features[0];
-    const label = f.properties.label;
+    const props = f.properties;
+    const label = props.label;
     const [lon, lat] = f.geometry.coordinates;
+    
+    // Cruciaal: We halen postcode en straatnaam op
+    const postcode = props.postcode; 
+    const city = props.city;
+    const street = props.street || props.name; // 'Rue de Sehen'
+    
+    // STAP 2: ARCEP ZOEKSTRATEGIE
+    const baseUrl = "https://data.arcep.fr/api/explore/v2.1/catalog/datasets";
+    
+    // STRATEGIE A: Zoeken op Straatnaam binnen Postcode (Beste voor platteland met foute INSEE)
+    // We gebruiken 'q' voor tekstzoeken (slimme match) en filteren op postcode.
+    let fixedUrl = "";
+    if (street && postcode) {
+        const qStreet = encodeURIComponent(street);
+        const qPostcode = encodeURIComponent(`code_postal="${postcode}"`);
+        fixedUrl = `${baseUrl}/maconnexioninternet/records?where=${qPostcode}&q=${qStreet}&limit=100`;
+    } else {
+        // Fallback: GPS Radius 1000m als geen straatnaam bekend is
+        const geo = encodeURIComponent(`within_distance(geopoint, geom'POINT(${lon} ${lat})', 1000m)`);
+        fixedUrl = `${baseUrl}/maconnexioninternet/records?where=${geo}&limit=100`;
+    }
 
-    // ---------------------------------------------------------
-    // STAP 2: ARCEP Queries (Via de hulpfunctie)
-    // ---------------------------------------------------------
-    // We vragen Fibre/DSL en Mobiel parallel op
-    const [fixedData, mobileData] = await Promise.all([
-        queryArcepGeo('maconnexioninternet', lat, lon, 500, 100).catch(err => ({ results: [], error: err.message })),
-        queryArcepGeo('monreseaumobile', lat, lon, 500, 100).catch(err => ({ results: [], error: err.message }))
-    ]);
+    // STRATEGIE B: Mobiel altijd via GPS (500m)
+    const geoMobile = encodeURIComponent(`within_distance(geopoint, geom'POINT(${lon} ${lat})', 500m)`);
+    const mobileUrl = `${baseUrl}/monreseaumobile/records?where=${geoMobile}&limit=50`;
 
-    // ---------------------------------------------------------
-    // STAP 3: Data Verwerken naar 'Neighbors' Lijst
-    // ---------------------------------------------------------
+    // Ophalen
+    const [fixedRes, mobileRes] = await Promise.all([fetch(fixedUrl), fetch(mobileUrl)]);
+    
+    let fixedData = { results: [] };
+    let mobileData = { results: [] };
+
+    if (fixedRes.ok) fixedData = await fixedRes.json();
+    if (mobileRes.ok) mobileData = await mobileRes.json();
+
+    // STAP 3: Resultaten Verwerken
     const streetMap = new Map();
 
-    // Verwerk Vaste Lijnen
     if (fixedData.results) {
       fixedData.results.forEach(r => {
         const num = r.numero || r.numero_voie;
-        const voie = r.nom_voie || "Onbekende straat";
-        const techno = (r.techno || '').toLowerCase();
-        
-        if (!num) return; // Skip records zonder huisnummer
+        if (!num) return;
 
-        const key = `${num} ${voie}`; // Unieke sleutel
+        const voie = r.nom_voie || street;
+        const techno = (r.techno || '').toLowerCase();
+        const key = `${num}`; // Groeperen op huisnummer
 
         if (!streetMap.has(key)) {
           streetMap.set(key, {
@@ -108,78 +80,51 @@ export default async function handler(req, res) {
 
         const entry = streetMap.get(key);
 
-        // Check Fibre (FttH)
-        // We zijn soepel: als er FttH staat, tellen we het mee
+        // Check Fibre (Soepele check: als er FttH staat is het goed)
         if (techno.includes('ftth')) {
-            // Check eventueel op status als dat veld betrouwbaar is, anders puur techniek
-            // r.etat_immeuble == 'DEPLOYE' is vaak een goede indicator in v2.1
-            entry.hasFibre = true;
+             // Soms is elig true, soms 1, soms '1'. We checken ruim.
+             if (r.elig == true || r.elig == 1 || r.elig == '1' || r.etat_immeuble === 'DEPLOYE') {
+                 entry.hasFibre = true;
+             }
         }
-        
-        // Check DSL
         if (techno.includes('adsl') || techno.includes('vdsl')) {
-          entry.hasDsl = true;
+             entry.hasDsl = true;
         }
       });
     }
 
-    // Sorteer de lijst: Huisnummer 2 komt voor 10
+    // Sorteren
     const neighbors = Array.from(streetMap.values()).sort((a, b) => {
         return parseInt(a.number) - parseInt(b.number);
     });
 
-    // ---------------------------------------------------------
-    // STAP 4: Mobiele Data Verwerken (Algemene status)
-    // ---------------------------------------------------------
+    // Mobiel verwerken
     let mobile = { orange: null, sfr: null, bouygues: null, free: null };
-    
     if (mobileData.results) {
-        mobileData.results.forEach(r => {
-            const op = (r.nom_operateur || r.operateur || '').toLowerCase();
-            // In v2.1 zijn coverage velden vaak boolean of integers (0/1)
-            const is4G = r.couverture_4g === 1 || r.couverture_4g === true;
-            const is5G = r.couverture_5g === 1 || r.couverture_5g === true;
-
-            let status = null;
-            if (is5G) status = "5G/4G";
-            else if (is4G) status = "4G";
-
-            if (op && status) {
-                if (!mobile[op] || mobile[op] === "Beschikbaar" || (status === "5G/4G" && mobile[op] === "4G")) {
-                    mobile[op] = status;
-                }
-            }
-        });
-        
-        // Fallback als specifieke kolommen leeg zijn
-        mobileData.results.forEach(r => {
-             const op = (r.nom_operateur || r.operateur || '').toLowerCase();
-             if (op && !mobile[op]) mobile[op] = "Beschikbaar"; 
-        });
+       mobileData.results.forEach(r => {
+           const op = (r.nom_operateur || r.operateur || '').toLowerCase();
+           // Check op 'best' coverage
+           if (r.couverture_5g == 1) { if(op) mobile[op] = "5G/4G"; }
+           else if (r.couverture_4g == 1) { if(op && mobile[op] !== "5G/4G") mobile[op] = "4G"; }
+       });
+       // Fallback loop
+       mobileData.results.forEach(r => {
+           const op = (r.nom_operateur || r.operateur || '').toLowerCase();
+           if(op && !mobile[op]) mobile[op] = "Beschikbaar";
+       });
     }
 
-    // ---------------------------------------------------------
-    // STAP 5: Response naar Frontend
-    // ---------------------------------------------------------
     return res.status(200).json({
       ok: true,
       address_found: label,
-      gps: { lat, lon },
+      search_method: street && postcode ? "postcode_street_match" : "gps_fallback",
       total_found: neighbors.length,
       neighbors: neighbors,
-      mobile: mobile,
-      debug: { 
-          fixed_count: fixedData.total_count || 0,
-          mobile_count: mobileData.total_count || 0
-      }
+      mobile: mobile
     });
 
   } catch (error) {
-    console.error("Critical Backend Error:", error);
-    return res.status(500).json({ 
-      ok: false, 
-      error: "Technische fout in de scanner.", 
-      details: error.message 
-    });
+    console.error(error);
+    return res.status(500).json({ ok: false, error: "Server fout", details: error.message });
   }
 }
