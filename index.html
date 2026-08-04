@@ -123,7 +123,7 @@
             if (q.length < 3) { suggestions.style.display = 'none'; return; }
             
             debounce = setTimeout(() => {
-                fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&limit=5`)
+                fetch(`https://data.geopf.fr/geocodage/search?q=${encodeURIComponent(q)}&limit=5`)
                     .then(r => r.json())
                     .then(data => {
                         suggestions.innerHTML = '';
