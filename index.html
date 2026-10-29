@@ -194,7 +194,8 @@
             const container = document.getElementById('finalAdvice');
             
             // Helper functies
-            const makeLinks = (list) => list.map(i => `<a href="${i.u}" target="_blank">${i.n} &rarr;</a>`).join('');
+            // providers.starlink en nordnet zijn losse objecten, de andere lijsten arrays: beide moeten werken
+            const makeLinks = (list) => [].concat(list).map(i => `<a href="${i.u}" target="_blank">${i.n} &rarr;</a>`).join('');
             
             let html = '';
 
@@ -286,6 +287,27 @@
             container.innerHTML = html;
             container.scrollIntoView({ behavior: 'smooth' });
         }
+
+        // --- 5. VOORINVULLEN (vanuit Infopoche of een andere pagina) ---
+        // ?adres=<tekst> werkt als het kiezen van dat adres in het zoekveld. Met &lat=..&lon=.. (WGS84) is er geen extra zoekactie nodig.
+        // Zonder parameters verandert er niets. De tekst gaat alleen in het invoerveld (value), nooit als HTML.
+        ;(function () { // de puntkomma ervoor is nodig: showResult hierboven eindigt zonder
+            try {
+                const p = new URLSearchParams(location.search);
+                const adres = (p.get('adres') || '').trim().slice(0, 200);
+                if (!adres) return;
+                const lat = parseFloat(p.get('lat')), lon = parseFloat(p.get('lon'));
+                if (isFinite(lat) && isFinite(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
+                    selectAddress({ properties: { label: adres }, geometry: { coordinates: [lon, lat] } });
+                    return;
+                }
+                input.value = adres;
+                fetch(`https://data.geopf.fr/geocodage/search?q=${encodeURIComponent(adres)}&limit=1`)
+                    .then(r => r.json())
+                    .then(data => { if (data.features && data.features[0]) selectAddress(data.features[0]); })
+                    .catch(() => {});
+            } catch (e) { /* zonder voorinvulling gewoon doorgaan */ }
+        })();
     </script>
 
 </body>
